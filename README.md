@@ -1,8 +1,8 @@
 # Devuni Notifier Package
 
-[![Latest Version on Packagist](https://img.shields.io/packagist/v/devuni/notifier.svg?style=flat-square)](https://packagist.org/packages/devuni/notifier)
-[![Total Downloads](https://img.shields.io/packagist/dt/devuni/notifier.svg?style=flat-square)](https://packagist.org/packages/devuni/notifier)
-[![Tests](https://github.com/devuni/notifier/actions/workflows/tests.yml/badge.svg)](https://github.com/devuni/notifier/actions/workflows/tests.yml)
+[![Latest Version on Packagist](https://img.shields.io/packagist/v/devuni/notifier-package.svg?style=flat-square)](https://packagist.org/packages/devuni/notifier-package)
+[![Total Downloads](https://img.shields.io/packagist/dt/devuni/notifier-package.svg?style=flat-square)](https://packagist.org/packages/devuni/notifier-package)
+[![Tests](https://github.com/devuni/notifier-package/actions/workflows/tests.yml/badge.svg)](https://github.com/devuni/notifier-package/actions/workflows/tests.yml)
 
 A Laravel 12 package for automated database backups and notifications.
 
@@ -25,7 +25,7 @@ A Laravel 12 package for automated database backups and notifications.
 You can install the package via composer:
 
 ```bash
-composer require devuni/notifier
+composer require devuni/notifier-package
 ```
 
 Publish the configuration file:

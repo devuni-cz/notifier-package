@@ -1,5 +1,5 @@
 {
-    "name": "devuni/notifier",
+    "name": "devuni/notifier-package",
     "description": "Laravel package for automated backups and notifications.",
     "keywords": [
         "laravel",
