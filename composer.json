@@ -1,28 +1,28 @@
 {
-  "name": "devuni/notifier",
-  "description": "Laravel notifier for automated backups",
-  "type": "library",
-  "license": "MIT",
-  "autoload": {
-    "psr-4": {
-      "Devuni\\Notifier\\": "src/"
+    "name": "devuni/notifier",
+    "description": "Laravel notifier for automated backups",
+    "type": "library",
+    "license": "MIT",
+    "autoload": {
+        "psr-4": {
+            "Devuni\\Notifier\\": "src/"
+        },
+        "files": [
+            "src/helpers.php"
+        ]
     },
-    "files": [
-      "src/helpers.php"
-    ]
-  },
-  "extra": {
-    "laravel": {
-      "providers": [
-        "Devuni\\Notifier\\NotifierServiceProvider"
-      ]
-    }
-  },
-  "require": {
-    "php": "^8.2",
-    "illuminate/support": "^12.0",
-    "guzzlehttp/guzzle": "^7.0"
-  },
-  "minimum-stability": "dev",
-  "prefer-stable": true
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Devuni\\Notifier\\NotifierServiceProvider"
+            ]
+        }
+    },
+    "require": {
+        "php": "^8.2",
+        "illuminate/support": "^12.0",
+        "guzzlehttp/guzzle": "^7.0"
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true
 }
