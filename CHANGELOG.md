@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.0-beta.2] - 2024-12-19
+
+### Added
+
+-   Comprehensive Pest test prompt for GitHub Copilot support
+-   Enhanced CHANGELOG formatting for better readability
+-   Additional test prompts and instructions for better developer experience
+
+### Changed
+
+-   Improved documentation formatting and structure
+-   Enhanced GitHub Copilot integration with more specific prompts
+
+## [1.0.0-beta.1] - 2024-12-19
+
 ### Added
 
 -   Switched to Pest testing framework for more expressive and modern tests
