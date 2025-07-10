@@ -19,6 +19,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Security
 
+## [1.0.0-alpha.2] - 2025-07-10
+
+### Fixed
+- Fixed composer test script to use vendor/bin/phpunit
+- Resolved GitHub Actions CI/CD pipeline test execution issue
+
 ## [1.0.0-alpha.1] - 2025-07-10
 
 ### Added
