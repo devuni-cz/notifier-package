@@ -47,12 +47,13 @@ applyTo: "**"
 
 ## Testing Requirements
 
--   Write comprehensive PHPUnit tests for all functionality
--   Use Laravel's testing helpers and assertions
--   Mock external dependencies properly
+-   Write comprehensive Pest tests for all functionality
+-   Use Laravel's testing helpers and assertions with Pest syntax
+-   Mock external dependencies properly using Pest features
 -   Test both success and failure scenarios
 -   Include feature tests for commands and services
 -   Maintain high test coverage (minimum 80%)
+-   Use Pest's expressive syntax over traditional PHPUnit assertions
 
 ## Documentation Standards
 

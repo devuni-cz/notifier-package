@@ -52,7 +52,9 @@
         "pestphp/pest": "^3.8"
     },
     "scripts": {
-        "test": "vendor/bin/phpunit",
+        "test": "vendor/bin/pest",
+        "test-unit": "vendor/bin/pest tests/Unit",
+        "test-feature": "vendor/bin/pest tests/Feature",
         "analyse": "vendor/bin/phpstan analyse",
         "test-coverage": "vendor/bin/pest --coverage",
         "format": "vendor/bin/pint",

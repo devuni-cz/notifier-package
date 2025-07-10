@@ -71,9 +71,13 @@ case $choice in
     2)
         read -p "Enter version (e.g., 1.0.0): " VERSION
         ;;
+    "")
+        echo "⚠️  No choice selected, using default: 1.0.0"
+        VERSION="1.0.0"
+        ;;
     *)
-        echo "❌ Invalid choice"
-        exit 1
+        echo "❌ Invalid choice, using default: 1.0.0"
+        VERSION="1.0.0"
         ;;
 esac
 

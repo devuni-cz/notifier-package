@@ -92,8 +92,20 @@ return [
 
 ## Testing
 
+This package uses [Pest](https://pestphp.com) for testing, providing a beautiful and expressive testing experience.
+
 ```bash
+# Run all tests
 composer test
+
+# Run only unit tests
+composer test-unit
+
+# Run only feature tests
+composer test-feature
+
+# Run tests with coverage
+composer test-coverage
 ```
 
 ## Changelog

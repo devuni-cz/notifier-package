@@ -2,30 +2,16 @@
 
 declare(strict_types=1);
 
-namespace Devuni\Notifier\Tests\Unit;
-
 use Devuni\Notifier\NotifierServiceProvider;
-use Devuni\Notifier\Tests\TestCase;
 
-class NotifierServiceProviderTest extends TestCase
-{
-    /**
-     * Test that the service provider is properly loaded.
-     */
-    public function test_service_provider_is_loaded(): void
-    {
-        $providers = $this->app->getLoadedProviders();
+it('loads the service provider', function () {
+    $providers = $this->app->getLoadedProviders();
 
-        $this->assertArrayHasKey(NotifierServiceProvider::class, $providers);
-        $this->assertTrue($providers[NotifierServiceProvider::class]);
-    }
+    expect($providers)->toHaveKey(NotifierServiceProvider::class);
+    expect($providers[NotifierServiceProvider::class])->toBeTrue();
+});
 
-    /**
-     * Test that the package configuration is loaded.
-     */
-    public function test_package_config_is_loaded(): void
-    {
-        // This test will pass once the config is published
-        $this->assertTrue(true);
-    }
-}
+it('can load package configuration', function () {
+    // This test will pass once the config is published
+    expect(true)->toBeTrue();
+});
