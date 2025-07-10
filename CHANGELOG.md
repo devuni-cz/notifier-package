@@ -22,16 +22,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.0.0-alpha.3] - 2025-07-10
 
 ### Fixed
-- Fixed composer test script to use vendor/bin/phpunit  
-- Reduced PHPUnit strictness to allow warnings without failing
-- Tests now pass successfully in CI/CD pipeline
-- Resolved GitHub Actions test execution issues
+
+-   Fixed composer test script to use vendor/bin/phpunit
+-   Reduced PHPUnit strictness to allow warnings without failing
+-   Tests now pass successfully in CI/CD pipeline
+-   Resolved GitHub Actions test execution issues
 
 ## [1.0.0-alpha.2] - 2025-07-10
 
 ### Fixed
-- Fixed composer test script to use vendor/bin/phpunit
-- Resolved GitHub Actions CI/CD pipeline test execution issue
+
+-   Fixed composer test script to use vendor/bin/phpunit
+-   Resolved GitHub Actions CI/CD pipeline test execution issue
 
 ## [1.0.0-alpha.1] - 2025-07-10
 
