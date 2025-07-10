@@ -1,0 +1,54 @@
+# Changelog
+
+All notable changes to `devuni/notifier-package` will be documented in this file.
+
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [Unreleased]
+
+### Added
+
+### Changed
+
+### Deprecated
+
+### Removed
+
+### Fixed
+
+### Security
+
+## [1.0.0-alpha.1] - 2025-07-10
+
+### Added
+
+-   Initial package structure and setup
+-   Service provider for Laravel 12 integration
+-   Configuration file template
+-   Database backup service foundation
+-   Notification system integration base
+-   Comprehensive GitHub Actions CI/CD pipeline
+-   Testing infrastructure with PHPUnit and Pest
+-   GitHub Copilot configuration for development
+-   Release management workflows
+-   Documentation and contributing guidelines
+
+### Notes
+
+-   This is an alpha release for testing and feedback
+-   API may change before stable release
+
+## [1.0.0] - 2025-07-10
+
+### Added
+
+-   Initial release
+-   Laravel 11 support
+-   Basic notifier functionality
+-   Comprehensive test suite
+-   GitHub Actions CI/CD
+-   Documentation and examples
+
+[Unreleased]: https://github.com/devuni-cz/notifier-package/compare/v1.0.0...HEAD
+[1.0.0]: https://github.com/devuni-cz/notifier-package/releases/tag/v1.0.0

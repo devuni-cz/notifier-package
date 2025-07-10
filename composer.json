@@ -55,7 +55,13 @@
         "test": "phpunit",
         "analyse": "phpstan analyse",
         "test-coverage": "vendor/bin/pest --coverage",
-        "format": "vendor/bin/pint"
+        "format": "vendor/bin/pint",
+        "release": "./scripts/release.sh",
+        "pre-commit": [
+            "@format",
+            "@analyse",
+            "@test"
+        ]
     },
     "minimum-stability": "stable",
     "prefer-stable": true,
