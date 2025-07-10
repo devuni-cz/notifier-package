@@ -8,14 +8,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
-- Switched to Pest testing framework for more expressive and modern tests
-- Enhanced testing scripts with unit and feature test separation
-- Improved GitHub Copilot prompts for Pest test generation
+
+-   Switched to Pest testing framework for more expressive and modern tests
+-   Enhanced testing scripts with unit and feature test separation
+-   Improved GitHub Copilot prompts for Pest test generation
 
 ### Changed
-- Replaced PHPUnit with Pest as the primary testing framework
-- Updated all existing tests to use Pest syntax
-- Enhanced testing documentation and examples
+
+-   Replaced PHPUnit with Pest as the primary testing framework
+-   Updated all existing tests to use Pest syntax
+-   Enhanced testing documentation and examples
 
 ### Deprecated
 
