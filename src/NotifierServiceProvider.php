@@ -2,8 +2,8 @@
 
 namespace Devuni\Notifier;
 
-use Illuminate\Support\ServiceProvider;
 use Devuni\Notifier\Commands\NotifierDatabaseBackupCommand;
+use Illuminate\Support\ServiceProvider;
 
 class NotifierServiceProvider extends ServiceProvider
 {

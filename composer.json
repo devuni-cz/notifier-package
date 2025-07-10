@@ -1,8 +1,23 @@
 {
     "name": "devuni/notifier",
-    "description": "Laravel notifier for automated backups",
-    "type": "library",
+    "description": "Laravel package for automated backups and notifications.",
+    "keywords": [
+        "laravel",
+        "notifier",
+        "backup",
+        "notifications",
+        "devuni"
+    ],
+    "homepage": "https://github.com/devuni-cz/notifier-package",
     "license": "MIT",
+    "authors": [
+        {
+            "name": "Ludwig Tomas",
+            "email": "ludwig@devuni.cz",
+            "role": "Developer"
+        }
+    ],
+    "type": "library",
     "autoload": {
         "psr-4": {
             "Devuni\\Notifier\\": "src/"
@@ -10,6 +25,11 @@
         "files": [
             "src/helpers.php"
         ]
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Devuni\\Notifier\\Tests\\": "tests/"
+        }
     },
     "extra": {
         "laravel": {
@@ -19,10 +39,30 @@
         }
     },
     "require": {
-        "php": "^8.2",
-        "illuminate/support": "^12.0",
-        "guzzlehttp/guzzle": "^7.0"
+        "php": "^8.4",
+        "illuminate/support": "^12.2",
+        "guzzlehttp/guzzle": "^7.9"
     },
-    "minimum-stability": "dev",
-    "prefer-stable": true
+    "require-dev": {
+        "phpunit/phpunit": "^11.5",
+        "orchestra/testbench": "^10.4",
+        "mockery/mockery": "^1.6",
+        "laravel/pint": "^1.23",
+        "larastan/larastan": "^3.5",
+        "pestphp/pest": "^3.8"
+    },
+    "scripts": {
+        "test": "phpunit",
+        "analyse": "phpstan analyse",
+        "test-coverage": "vendor/bin/pest --coverage",
+        "format": "vendor/bin/pint"
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true,
+    "config": {
+        "sort-packages": true,
+        "allow-plugins": {
+            "pestphp/pest-plugin": true
+        }
+    }
 }

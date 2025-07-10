@@ -1,0 +1,11 @@
+/vendor
+.env
+.env.backup
+.env.production
+/.fleet
+/.idea
+/.vscode
+
+.phpunit.cache
+composer.lock
+
