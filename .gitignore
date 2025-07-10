@@ -5,6 +5,7 @@
 /.fleet
 /.idea
 /.vscode
+/build/report.junit.xml
 
 .phpunit.cache
 composer.lock
