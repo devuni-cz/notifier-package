@@ -3,6 +3,7 @@
 namespace Devuni\Notifier;
 
 use Devuni\Notifier\Commands\NotifierDatabaseBackupCommand;
+use Devuni\Notifier\Commands\NotifierStorageBackupCommand;
 use Illuminate\Support\ServiceProvider;
 
 class NotifierServiceProvider extends ServiceProvider
@@ -12,6 +13,8 @@ class NotifierServiceProvider extends ServiceProvider
         $this->publishes([
             __DIR__.'/../config/notifier.php' => config_path('notifier.php'),
         ], 'config');
+
+        $this->loadRoutesFrom(__DIR__.'/../routes/notifier.php');
     }
 
     public function register(): void
@@ -20,6 +23,7 @@ class NotifierServiceProvider extends ServiceProvider
 
         $this->commands([
             NotifierDatabaseBackupCommand::class,
+            NotifierStorageBackupCommand::class,
         ]);
 
         require_once __DIR__.'/helpers.php';
