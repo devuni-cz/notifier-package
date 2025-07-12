@@ -26,26 +26,25 @@ echo "  ✓ Documentation updated"
 echo "  ✓ CHANGELOG.md updated"
 
 # Run tests
-
-COMPOSER="/c/Users/david/.config/herd/bin/composer.bat"
-
-if ! winpty $COMPOSER test; then
+echo "🧪 Running tests..."
+if ! composer test; then
     echo "❌ Tests failed. Please fix tests before releasing."
     exit 1
 fi
 
+# Run code analysis
 echo "🔍 Running code analysis..."
-# Zkoušíme, jestli existuje run-script analyse (dry-run)
-if winpty $COMPOSER run-script analyse --dry-run > /dev/null 2>&1; then
-    if ! winpty $COMPOSER analyse; then
+if composer run-script analyse --dry-run > /dev/null 2>&1; then
+    if ! composer analyse; then
         echo "❌ Code analysis failed. Please fix issues before releasing."
         exit 1
     fi
 fi
 
+# Format code
 echo "🎨 Formatting code..."
-if winpty $COMPOSER run-script format --dry-run > /dev/null 2>&1; then
-    winpty $COMPOSER format
+if composer run-script format --dry-run > /dev/null 2>&1; then
+    composer format
 fi
 
 # Check if there are uncommitted changes
