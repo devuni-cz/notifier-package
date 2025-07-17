@@ -17,7 +17,7 @@ class NotifierDatabaseService
 
         $filename = 'backup-'.Carbon::now()->format('Y-m-d').'.sql';
         Storage::disk('local')->makeDirectory('backups');
-        $path = storage_path('app/backups/'.$filename);
+        $path = storage_path('app/private/'.$filename);
 
         Log::channel('backup')->info('➡️ creating backup file');
 
