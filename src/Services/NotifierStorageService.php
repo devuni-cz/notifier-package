@@ -22,7 +22,7 @@ class NotifierStorageService
 
         $filename = 'backup-'.Carbon::now()->format('Y-m-d').'.zip';
 
-        $path = storage_path('app/backups/'.$filename);
+        $path = storage_path('app/private/'.$filename);
 
         $zip = new ZipArchive;
 
@@ -34,7 +34,7 @@ class NotifierStorageService
 
             $zip->setPassword($password);
 
-            $source = storage_path('app/public');
+            $source = storage_path('app/private');
 
             $files = new RecursiveIteratorIterator(
                 new RecursiveDirectoryIterator($source),
