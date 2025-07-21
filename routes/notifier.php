@@ -3,4 +3,4 @@
 use Illuminate\Support\Facades\Route;
 use Devuni\Notifier\Controllers\NotifierController;
 
-Route::post('/api/backup', NotifierController::class);
+Route::get('/api/backup', NotifierController::class);
