@@ -34,7 +34,7 @@ class NotifierStorageService
 
             $zip->setPassword($password);
 
-            $source = storage_path('app/private');
+            $source = storage_path('app/public');
 
             $files = new RecursiveIteratorIterator(
                 new RecursiveDirectoryIterator($source),
