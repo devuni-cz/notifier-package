@@ -41,6 +41,11 @@ php artisan vendor:publish --provider="Devuni\Notifier\NotifierServiceProvider" 
 php artisan migrate
 ```
 
+Configure environment variables for Notifier package:
+
+```bash
+php artisan notifier:install
+```
 ## Configuration
 
 The configuration file will be published to `config/notifier.php`. Here you can configure:

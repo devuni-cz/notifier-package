@@ -98,7 +98,7 @@ class NotifierInstallCommand extends Command
         $this->line('<fg=bright-blue>📦 Package:</>          <fg=white;options=bold>Notifier</>');
         $this->line('<fg=bright-blue>📁 Repository:</>       <fg=cyan;options=underscore>https://github.com/devuni-cz/notifier-package</>');
         $this->line('<fg=bright-blue>🌐 Website:</>          <fg=cyan;options=underscore>https://devuni.cz</>');
-        $this->line('<fg=bright-blue>🛠️ Developed by:</>    <fg=white> Devuni team</>');
+        $this->line('<fg=bright-blue>🛠️  Developed by:</>    <fg=white> Devuni team</>');
         $this->line('<fg=bright-blue>📅 Version:</>          <fg=white>'. $this->getCurrentVersion() . '</>');
         $this->line('<fg=gray>──────────────────────────────────────────────────────────────────────────────</>');
         $this->newLine();
