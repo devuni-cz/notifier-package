@@ -4,6 +4,7 @@ namespace Devuni\Notifier;
 
 use Devuni\Notifier\Commands\NotifierDatabaseBackupCommand;
 use Devuni\Notifier\Commands\NotifierStorageBackupCommand;
+use Devuni\Notifier\Commands\NotifierInstallCommand;
 use Illuminate\Support\ServiceProvider;
 
 class NotifierServiceProvider extends ServiceProvider
@@ -24,6 +25,7 @@ class NotifierServiceProvider extends ServiceProvider
         $this->commands([
             NotifierDatabaseBackupCommand::class,
             NotifierStorageBackupCommand::class,
+            NotifierInstallCommand::class,
         ]);
 
         require_once __DIR__.'/helpers.php';
