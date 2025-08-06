@@ -7,7 +7,7 @@ use Illuminate\Console\Command;
 
 class NotifierDatabaseBackupCommand extends Command
 {
-    protected $signature = 'database:backup';
+    protected $signature = 'notifier:database-backup';
 
     protected $description = 'Command for creating a database backup';
 

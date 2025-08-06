@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\File;
 
 class NotifierInstallCommand extends Command
 {
-    protected $signature = 'api:install';
+    protected $signature = 'notifier:install';
     protected $description = 'Configure environment variables for Notifier package';
 
     public function handle()

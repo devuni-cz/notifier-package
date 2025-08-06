@@ -12,7 +12,7 @@ class NotifierStorageBackupCommand extends Command
      *
      * @var string
      */
-    protected $signature = 'storage:backup';
+    protected $signature = 'notifier:storage-backup';
 
     /**
      * The console command description.
