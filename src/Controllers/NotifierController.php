@@ -2,7 +2,6 @@
 
 namespace Devuni\Notifier\Controllers;
 
-use App\Http\Controllers\Controller;
 use Exception;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -13,6 +12,8 @@ class NotifierController
 {
     public function __invoke(Request $request): JsonResponse
     {
+        $request->validate(['param' => 'required|in:backup_database,backup_storage']);
+
         if ($response = $this->checkEnvironment()) {
             return $response;
         }
@@ -86,7 +87,7 @@ class NotifierController
             return response()->json([
                 'message' => 'Storage backup failed.',
                 'error' => $e->getMessage(),
-            ]);
+            ], 500);
         }
     }
 
