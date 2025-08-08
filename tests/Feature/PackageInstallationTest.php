@@ -2,12 +2,32 @@
 
 declare(strict_types=1);
 
-it('can install the package', function () {
-    // Test that the package can be installed and configured
-    expect(true)->toBeTrue();
+use Illuminate\Console\Command;
+
+it('returns failure when .env creation is declined', function () {
+    $envPath = base_path('.env');
+    if (file_exists($envPath)) {
+        unlink($envPath);
+    }
+
+    $this->artisan('notifier:install')
+        ->expectsConfirmation('Do you want to create it from .env.example', 'no')
+        ->assertExitCode(Command::FAILURE);
 });
 
-it('can publish configuration', function () {
-    // Test configuration publishing
-    expect(true)->toBeTrue();
+it('returns success when environment is configured', function () {
+    $envPath = base_path('.env');
+    if (file_exists($envPath)) {
+        unlink($envPath);
+    }
+
+    $this->artisan('notifier:install')
+        ->expectsConfirmation('Do you want to create it from .env.example', 'yes')
+        ->expectsQuestion('BACKUP_CODE: ', 'code')
+        ->expectsQuestion('BACKUP_URL: ', 'https://example.com')
+        ->expectsQuestion('BACKUP_ZIP_PASSWORD: ', 'secret')
+        ->assertExitCode(Command::SUCCESS);
+
+    expect(file_exists($envPath))->toBeTrue();
+    unlink($envPath);
 });
