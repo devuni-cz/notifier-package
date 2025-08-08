@@ -37,7 +37,7 @@ class NotifierInstallCommand extends Command
     private function ensureEnvFileExists() : void 
     {
         if (!File::exists(base_path('.env'))){
-            $this->warn('⚠️ .env file does not exists.');
+            $this->warn('❗ .env file does not exists.');
 
             if ($this->confirm('Do you want to create it from .env.example', true)) {
                 File::copy(base_path('.env.example'), base_path('.env'));
