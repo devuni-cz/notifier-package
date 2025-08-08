@@ -20,7 +20,8 @@
     "type": "library",
     "autoload": {
         "psr-4": {
-            "Devuni\\Notifier\\": "src/"
+            "Devuni\\Notifier\\": "src/",
+            "Devuni\\Notifier\\Http\\": "app/Http/"
         },
         "files": [
             "src/helpers.php"

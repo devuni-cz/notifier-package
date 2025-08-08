@@ -3,8 +3,10 @@
 namespace Devuni\Notifier;
 
 use Devuni\Notifier\Commands\NotifierDatabaseBackupCommand;
-use Devuni\Notifier\Commands\NotifierStorageBackupCommand;
 use Devuni\Notifier\Commands\NotifierInstallCommand;
+use Devuni\Notifier\Commands\NotifierStorageBackupCommand;
+use Devuni\Notifier\Http\Middleware\VerifyBackupToken;
+use Illuminate\Routing\Router;
 use Illuminate\Support\ServiceProvider;
 
 class NotifierServiceProvider extends ServiceProvider
@@ -16,6 +18,8 @@ class NotifierServiceProvider extends ServiceProvider
         ], 'config');
 
         $this->loadRoutesFrom(__DIR__.'/../routes/notifier.php');
+
+        $this->app->make(Router::class)->aliasMiddleware('auth.backup', VerifyBackupToken::class);
     }
 
     public function register(): void

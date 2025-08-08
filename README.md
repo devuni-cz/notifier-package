@@ -75,6 +75,16 @@ Create a database backup:
 php artisan notifier:backup
 ```
 
+### Backup HTTP Endpoint
+
+The package exposes a `/api/backup` route protected by the `auth.backup` middleware.
+Requests must supply the token defined in `config/notifier.php` via the `X-Backup-Code`
+header or a `backup_code` query parameter:
+
+```bash
+curl -H "X-Backup-Code: your-token" https://example.com/api/backup
+```
+
 ### Configuration Options
 
 ```php
