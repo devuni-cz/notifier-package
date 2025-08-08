@@ -7,6 +7,7 @@ use GuzzleHttp\Client;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
+use Symfony\Component\Process\Process;
 use Throwable;
 
 class NotifierDatabaseService
@@ -21,10 +22,24 @@ class NotifierDatabaseService
 
         Log::channel('backup')->info('➡️ creating backup file');
 
-        $command = 'mysqldump --no-tablespaces --user='.env('DB_USERNAME').' --password='.env('DB_PASSWORD').' --host='.env('DB_HOST').' '.env('DB_DATABASE').' > '.$path;
-        exec($command);
+        $config = config('database.connections.mysql');
 
-        sleep(5);
+        $command = [
+            'mysqldump',
+            '--no-tablespaces',
+            '--user='.$config['username'],
+            '--password='.$config['password'],
+            '--host='.$config['host'],
+            '--result-file='.$path,
+            $config['database'],
+        ];
+
+        $process = new Process($command);
+        $process->run();
+
+        if (! $process->isSuccessful()) {
+            throw new \RuntimeException($process->getErrorOutput());
+        }
 
         return $path;
     }
