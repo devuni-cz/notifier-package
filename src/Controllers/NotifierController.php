@@ -55,7 +55,7 @@ class NotifierController
         try {
             Log::channel('backup')->info('⚙️ STARTING NEW BACKUP ⚙️');
 
-            Artisan::call('database:backup');
+            Artisan::call('notifier:database-backup');
 
             return response()->json([
                 'message' => 'Database backup has been created successfully.',
@@ -75,7 +75,7 @@ class NotifierController
         try {
             Log::channel('backup')->info('⚙️ STARTING NEW BACKUP ⚙️');
 
-            Artisan::call('storage:backup');
+            Artisan::call('notifier:storage-backup');
 
             return response()->json([
                 'message' => 'Storage backup has been created successfully.',
