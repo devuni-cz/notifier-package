@@ -13,13 +13,17 @@ class NotifierDatabaseService
 {
     public static function createDatabaseBackup()
     {
-        Log::channel('backup')->info('⚙️ STARTING NEW BACKUP ⚙️');
+        $logChannel = config('notifier.log_channel');
+        $disk = config('notifier.default_disk');
+        $backupDir = config('notifier.paths.backup');
+
+        Log::channel($logChannel)->info('⚙️ STARTING NEW BACKUP ⚙️');
 
         $filename = 'backup-'.Carbon::now()->format('Y-m-d').'.sql';
-        Storage::disk('local')->makeDirectory('backups');
-        $path = storage_path('app/private/'.$filename);
+        Storage::disk($disk)->makeDirectory($backupDir);
+        $path = storage_path('app/'.$backupDir.'/'.$filename);
 
-        Log::channel('backup')->info('➡️ creating backup file');
+        Log::channel($logChannel)->info('➡️ creating backup file');
 
         $command = 'mysqldump --no-tablespaces --user='.env('DB_USERNAME').' --password='.env('DB_PASSWORD').' --host='.env('DB_HOST').' '.env('DB_DATABASE').' > '.$path;
         exec($command);
@@ -31,7 +35,9 @@ class NotifierDatabaseService
 
     public static function sendDatabaseBackup(string $path)
     {
-        Log::channel('backup')->info('➡️ preparing file for sending');
+        $logChannel = config('notifier.log_channel');
+
+        Log::channel($logChannel)->info('➡️ preparing file for sending');
 
         try {
             $client = new Client;
@@ -55,18 +61,18 @@ class NotifierDatabaseService
             ]);
 
             if (in_array($response->getStatusCode(), [200, 201])) {
-                Log::channel('backup')->info('➡️ file was sent');
+                Log::channel($logChannel)->info('➡️ file was sent');
                 File::delete($path);
-                Log::channel('backup')->info('➡️ file was deleted');
-                Log::channel('backup')->info('✅ END OF BACKUP');
+                Log::channel($logChannel)->info('➡️ file was deleted');
+                Log::channel($logChannel)->info('✅ END OF BACKUP');
             }
         } catch (Throwable $th) {
-            Log::channel('backup')->emergency('❌ an error occurred while uploading a file', [
+            Log::channel($logChannel)->emergency('❌ an error occurred while uploading a file', [
                 'th' => $th->getMessage(),
                 'env' => env('BACKUP_URL'),
                 'code' => env('BACKUP_CODE'),
             ]);
-            Log::channel('backup')->emergency('❌ END OF SESSION ❌');
+            Log::channel($logChannel)->emergency('❌ END OF SESSION ❌');
         }
     }
 }
