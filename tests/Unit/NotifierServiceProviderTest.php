@@ -12,6 +12,5 @@ it('loads the service provider', function () {
 });
 
 it('can load package configuration', function () {
-    // This test will pass once the config is published
-    expect(true)->toBeTrue();
+    expect(config('notifier.backup_zip_password'))->toBe(env('BACKUP_ZIP_PASSWORD', 'secret123'));
 });
