@@ -64,8 +64,10 @@ class NotifierStorageService
 
             Log::channel('backup')->info('➡️ closing the backup file');
             $zip->close();
-
-            chmod($path, 0777);
+            if (! chmod($path, 0600)) {
+                Log::channel('backup')->error('❌ failed to set backup file permissions', ['path' => $path]);
+                throw new \RuntimeException('Unable to set backup file permissions for '.$path);
+            }
         }
 
         Log::channel('backup')->info($path);

@@ -12,6 +12,7 @@ A Laravel 12 package for automated database backups and notifications.
 -   Multiple notification channels (email, Slack, etc.)
 -   Configurable backup schedules
 -   Backup verification and validation
+-   Backup files created with restrictive permissions (0600)
 -   Comprehensive logging
 -   Easy configuration and customization
 
