@@ -80,20 +80,24 @@ php artisan notifier:backup
 ```php
 // config/notifier.php
 return [
-    'backup' => [
-        'enabled' => env('NOTIFIER_BACKUP_ENABLED', true),
-        'path' => env('NOTIFIER_BACKUP_PATH', storage_path('app/backups')),
-        'compress' => env('NOTIFIER_BACKUP_COMPRESS', true),
+    'backup_code' => env('BACKUP_CODE'),
+    'backup_url' => env('BACKUP_URL'),
+    'backup_zip_password' => env('BACKUP_ZIP_PASSWORD', 'secret123'),
+
+    'paths' => [
+        'backup' => env('NOTIFIER_BACKUP_PATH', 'backups'),
+        'storage' => env('NOTIFIER_STORAGE_PATH', 'public'),
     ],
 
-    'notifications' => [
-        'channels' => ['mail', 'slack'],
-        'mail' => [
-            'to' => env('NOTIFIER_MAIL_TO'),
-        ],
-    ],
+    'log_channel' => env('NOTIFIER_LOG_CHANNEL', 'backup'),
+    'default_disk' => env('NOTIFIER_DEFAULT_DISK', 'local'),
 ];
 ```
+
+* `paths.backup` – directory relative to `storage/app` where backup files are written. Defaults to `backups`.
+* `paths.storage` – directory relative to `storage/app` that will be archived for storage backups. Defaults to `public`.
+* `log_channel` – log channel used for all notifier package logs. Defaults to `backup`.
+* `default_disk` – filesystem disk used for backup file operations. Defaults to `local`.
 
 ## Testing
 

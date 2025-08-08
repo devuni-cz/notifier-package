@@ -16,30 +16,33 @@ class NotifierStorageService
 {
     public static function createStorageBackup()
     {
-        Log::channel('backup')->info('⚙️ STARTING NEW BACKUP ⚙️');
+        $logChannel = config('notifier.log_channel');
+        $disk = config('notifier.default_disk');
+        $backupDir = config('notifier.paths.backup');
+        $source = storage_path('app/'.config('notifier.paths.storage'));
 
-        Storage::disk('local')->makeDirectory('backups');
+        Log::channel($logChannel)->info('⚙️ STARTING NEW BACKUP ⚙️');
+
+        Storage::disk($disk)->makeDirectory($backupDir);
 
         $filename = 'backup-'.Carbon::now()->format('Y-m-d').'.zip';
 
-        $path = storage_path('app/private/'.$filename);
+        $path = storage_path('app/'.$backupDir.'/'.$filename);
 
         $zip = new ZipArchive;
 
-        Log::channel('backup')->info('➡️ creating backup file');
+        Log::channel($logChannel)->info('➡️ creating backup file');
         if ($zip->open($path, ZipArchive::CREATE | ZipArchive::OVERWRITE) === true) {
-            Log::channel('backup')->info('➡️ adding files to the backup');
+            Log::channel($logChannel)->info('➡️ adding files to the backup');
 
             $password = config('notifier.backup_zip_password');
 
             $zip->setPassword($password);
 
-            $source = storage_path('app/public');
-
             if (count(File::allFiles($source)) === 0) {
-                Log::channel('backup')->info('❌ No files to backup in the source directory: '.$source);
+                Log::channel($logChannel)->info('❌ No files to backup in the source directory: '.$source);
                 throw new \Exception('No files to backup in the source directory: '.$source);
-            }            
+            }
 
             $files = new RecursiveIteratorIterator(
                 new RecursiveDirectoryIterator($source),
@@ -47,7 +50,7 @@ class NotifierStorageService
             );
 
             foreach ($files as $file) {
-                Log::channel('backup')->info('➡️ adding file: '.$file->getRealPath());
+                Log::channel($logChannel)->info('➡️ adding file: '.$file->getRealPath());
                 // Skip directories (they will be added automatically)
                 if (! $file->isDir()) {
                     // Get real and relative path for the current file
@@ -62,20 +65,22 @@ class NotifierStorageService
                 }
             }
 
-            Log::channel('backup')->info('➡️ closing the backup file');
+            Log::channel($logChannel)->info('➡️ closing the backup file');
             $zip->close();
 
             chmod($path, 0777);
         }
 
-        Log::channel('backup')->info($path);
+        Log::channel($logChannel)->info($path);
 
         return $path;
     }
 
     public static function sendStorageBackup(string $path)
     {
-        Log::channel('backup')->info('➡️ preparing file for sending');
+        $logChannel = config('notifier.log_channel');
+
+        Log::channel($logChannel)->info('➡️ preparing file for sending');
 
         try {
             $client = new Client;
@@ -99,24 +104,24 @@ class NotifierStorageService
             ]);
 
             if ($response->getStatusCode() == 200 || $response->getStatusCode() == 201) {
-                Log::channel('backup')->info('➡️ file was sent');
+                Log::channel($logChannel)->info('➡️ file was sent');
 
                 File::delete($path);
 
-                Log::channel('backup')->info('➡️ file was deleted');
-                Log::channel('backup')->info('✅ END OF BACKUP');
+                Log::channel($logChannel)->info('➡️ file was deleted');
+                Log::channel($logChannel)->info('✅ END OF BACKUP');
             } else {
-                Log::error('❌ backup file could not be sent');
+                Log::channel($logChannel)->error('❌ backup file could not be sent');
             }
 
             return $response->getBody();
         } catch (Throwable $th) {
-            Log::channel('backup')->emergency('❌ an error occurred while uploading a file', [
+            Log::channel($logChannel)->emergency('❌ an error occurred while uploading a file', [
                 'th' => $th->getMessage(),
                 'env' => env('BACKUP_URL'),
                 'code' => env('BACKUP_CODE'),
             ]);
-            Log::channel('backup')->emergency('❌ END OF SESSION ❌');
+            Log::channel($logChannel)->emergency('❌ END OF SESSION ❌');
         }
     }
 }

@@ -2,7 +2,6 @@
 
 namespace Devuni\Notifier\Controllers;
 
-use App\Http\Controllers\Controller;
 use Exception;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -52,8 +51,10 @@ class NotifierController
 
     private function backupDatabase(): JsonResponse
     {
+        $logChannel = config('notifier.log_channel');
+
         try {
-            Log::channel('backup')->info('⚙️ STARTING NEW BACKUP ⚙️');
+            Log::channel($logChannel)->info('⚙️ STARTING NEW BACKUP ⚙️');
 
             Artisan::call('notifier:database-backup');
 
@@ -61,7 +62,7 @@ class NotifierController
                 'message' => 'Database backup has been created successfully.',
             ]);
         } catch (Exception $e) {
-            Log::channel('backup')->error('Database backup failed.', ['error' => $e->getMessage()]);
+            Log::channel($logChannel)->error('Database backup failed.', ['error' => $e->getMessage()]);
 
             return response()->json([
                 'message' => 'Database backup failed.',
@@ -72,8 +73,10 @@ class NotifierController
 
     private function backupStorage(): JsonResponse
     {
+        $logChannel = config('notifier.log_channel');
+
         try {
-            Log::channel('backup')->info('⚙️ STARTING NEW BACKUP ⚙️');
+            Log::channel($logChannel)->info('⚙️ STARTING NEW BACKUP ⚙️');
 
             Artisan::call('notifier:storage-backup');
 
@@ -81,7 +84,7 @@ class NotifierController
                 'message' => 'Storage backup has been created successfully.',
             ]);
         } catch (Exception $e) {
-            Log::channel('backup')->error('Storage backup failed.', ['error' => $e->getMessage()]);
+            Log::channel($logChannel)->error('Storage backup failed.', ['error' => $e->getMessage()]);
 
             return response()->json([
                 'message' => 'Storage backup failed.',
