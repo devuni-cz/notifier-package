@@ -4,6 +4,7 @@ namespace Devuni\Notifier\Commands;
 
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\File;
+use Composer\InstalledVersions;
 
 
 class NotifierInstallCommand extends Command
@@ -104,8 +105,11 @@ class NotifierInstallCommand extends Command
 
     private function getCurrentVersion(): string
     {
-        $json = json_decode(shell_exec('composer show devuni/notifier-package --format=json'), true);
-        return $json['versions'][0] ?? 'unkown';
+        try {
+            return InstalledVersions::getPrettyVersion('devuni/notifier-package');
+        } catch (\OutOfBoundsException $e) {
+            return 'unknown';
+        }
     }
 }
 
