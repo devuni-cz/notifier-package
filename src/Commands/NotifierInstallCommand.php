@@ -15,7 +15,9 @@ class NotifierInstallCommand extends Command
     public function handle()
     {
         $this->displayBanner();
-        $this->ensureEnvFileExists();
+        if($this->ensureEnvFileExists() === static::FAILURE) {
+            return static::FAILURE;
+        }
         $this->newLine();
 
         $this->info('🔧 Please provide the required environment values:');
@@ -33,9 +35,10 @@ class NotifierInstallCommand extends Command
 
         $this->newLine();
         $this->info('✅ Notifier environment configuration was saved successfully!');
+        return static::SUCCESS;
     }
 
-    private function ensureEnvFileExists() : void 
+    private function ensureEnvFileExists() : int
     {
         if (!File::exists(base_path('.env'))){
             $this->warn('❗ .env file does not exists.');
@@ -46,9 +49,10 @@ class NotifierInstallCommand extends Command
             } 
             else {
                 $this->error('❌ Installation aborted. .env file is required.');
-                exit(1);
+                return static::FAILURE;
             }
         }
+        return static::SUCCESS;
     }
 
     private function askRequired(string $question) : string 
