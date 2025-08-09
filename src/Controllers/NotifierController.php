@@ -12,6 +12,8 @@ class NotifierController
 {
     public function __invoke(Request $request): JsonResponse
     {
+        $request->validate(['param' => 'required|in:backup_database,backup_storage']);
+        
         if ($response = $this->checkEnvironment()) {
             return $response;
         }
