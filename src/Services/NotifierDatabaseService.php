@@ -2,12 +2,13 @@
 
 namespace Devuni\Notifier\Services;
 
+use Throwable;
 use Carbon\Carbon;
 use GuzzleHttp\Client;
-use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\File;
+use Symfony\Component\Process\Process;
 use Illuminate\Support\Facades\Storage;
-use Throwable;
 
 class NotifierDatabaseService
 {
@@ -20,11 +21,20 @@ class NotifierDatabaseService
         $path = storage_path('app/private/'.$filename);
 
         Log::channel('backup')->info('➡️ creating backup file');
+        
+        $config = config('database.connections.mysql');
 
-        $command = 'mysqldump --no-tablespaces --user='.env('DB_USERNAME').' --password='.env('DB_PASSWORD').' --host='.env('DB_HOST').' '.env('DB_DATABASE').' > '.$path;
-        exec($command);
-
-        sleep(5);
+        $command = [
+            'mysqldump',
+            '--no-tablespaces',
+            '--user='.$config['username'],
+            '--password='.$config['password'],
+            '--host='.$config['host'],
+            '--result-file='.$path,
+            $config['database'],
+        ];
+        $process = new Process($command);
+        $process->run();
 
         return $path;
     }
