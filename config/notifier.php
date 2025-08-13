@@ -31,6 +31,13 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Fallback path used when the configured backup path is not writable.
+    |--------------------------------------------------------------------------
+    */
+    'backup_fallback_path' => env('NOTIFIER_FALLBACK_BACKUP_PATH', sys_get_temp_dir().'/notifier-backups'),
+
+    /*
+    |--------------------------------------------------------------------------
     | Default filesystem disk used for temporary backup storage.
     |--------------------------------------------------------------------------
     */

@@ -20,3 +20,14 @@ it('creates a zip with restrictive permissions', function () {
 
     unlink($path);
 });
+
+it('falls back to temp directory when path is not writable', function () {
+    config()->set('notifier.backup_path', '/proc/notifier');
+
+    $path = NotifierStorageService::createStorageBackup();
+
+    $fallback = rtrim(sys_get_temp_dir(), '/').'/notifier-backups';
+    expect($path)->toStartWith($fallback);
+
+    unlink($path);
+});

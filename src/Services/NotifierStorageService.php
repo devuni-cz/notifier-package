@@ -18,7 +18,18 @@ class NotifierStorageService
         Log::channel(config('notifier.log_channel'))->info('⚙️ STARTING NEW BACKUP ⚙️');
 
         $directory = rtrim(config('notifier.backup_path'), '/');
-        File::ensureDirectoryExists($directory);
+
+        try {
+            File::ensureDirectoryExists($directory);
+        } catch (Throwable $e) {
+            Log::channel(config('notifier.log_channel'))->warning('Primary backup path is not writable, falling back to temp directory', [
+                'path' => $directory,
+                'error' => $e->getMessage(),
+            ]);
+
+            $directory = rtrim(config('notifier.backup_fallback_path'), '/');
+            File::ensureDirectoryExists($directory);
+        }
 
         $filename = 'backup-'.Carbon::now()->format('Y-m-d').'.zip';
 

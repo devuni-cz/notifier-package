@@ -33,3 +33,20 @@ it('throws an exception when mysqldump fails', function () {
 
     NotifierDatabaseService::createDatabaseBackup();
 })->throws(RuntimeException::class);
+
+it('falls back to temp directory when path is not writable', function () {
+    config()->set('notifier.backup_path', '/proc/notifier');
+
+    $process = Mockery::mock('overload:'.Process::class);
+    $process->shouldReceive('run')->once();
+    $process->shouldReceive('isSuccessful')->andReturn(true);
+
+    $path = NotifierDatabaseService::createDatabaseBackup();
+
+    $fallback = rtrim(sys_get_temp_dir(), '/').'/notifier-backups';
+    expect($path)->toStartWith($fallback);
+
+    if (file_exists($path)) {
+        unlink($path);
+    }
+});
