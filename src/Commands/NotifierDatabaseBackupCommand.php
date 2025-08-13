@@ -16,6 +16,8 @@ class NotifierDatabaseBackupCommand extends Command
         $backup_path = NotifierDatabaseService::createDatabaseBackup();
         $this->info($backup_path);
 
-        return NotifierDatabaseService::sendDatabaseBackup($backup_path);
+        NotifierDatabaseService::sendDatabaseBackup($backup_path);
+
+        return self::SUCCESS;
     }
 }

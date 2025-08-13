@@ -11,7 +11,6 @@ it('loads the service provider', function () {
     expect($providers[NotifierServiceProvider::class])->toBeTrue();
 });
 
-it('can load package configuration', function () {
-    // This test will pass once the config is published
-    expect(true)->toBeTrue();
+it('merges package configuration', function () {
+    expect(config('notifier.backup_zip_password'))->toBe('secret123');
 });

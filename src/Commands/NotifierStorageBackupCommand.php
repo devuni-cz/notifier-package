@@ -32,5 +32,7 @@ class NotifierStorageBackupCommand extends Command
         info($backup_path);
 
         NotifierStorageService::sendStorageBackup($backup_path);
+
+        return self::SUCCESS;
     }
 }

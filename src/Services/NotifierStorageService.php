@@ -6,7 +6,6 @@ use Carbon\Carbon;
 use GuzzleHttp\Client;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Storage;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
 use Throwable;
@@ -16,19 +15,20 @@ class NotifierStorageService
 {
     public static function createStorageBackup()
     {
-        Log::channel('backup')->info('⚙️ STARTING NEW BACKUP ⚙️');
+        Log::channel(config('notifier.log_channel'))->info('⚙️ STARTING NEW BACKUP ⚙️');
 
-        Storage::disk('local')->makeDirectory('backups');
+        $directory = rtrim(config('notifier.backup_path'), '/');
+        File::ensureDirectoryExists($directory);
 
         $filename = 'backup-'.Carbon::now()->format('Y-m-d').'.zip';
 
-        $path = storage_path('app/private/'.$filename);
+        $path = $directory.'/'.$filename;
 
         $zip = new ZipArchive;
 
-        Log::channel('backup')->info('➡️ creating backup file');
+        Log::channel(config('notifier.log_channel'))->info('➡️ creating backup file');
         if ($zip->open($path, ZipArchive::CREATE | ZipArchive::OVERWRITE) === true) {
-            Log::channel('backup')->info('➡️ adding files to the backup');
+            Log::channel(config('notifier.log_channel'))->info('➡️ adding files to the backup');
 
             $password = config('notifier.backup_zip_password');
 
@@ -37,9 +37,9 @@ class NotifierStorageService
             $source = storage_path('app/public');
 
             if (count(File::allFiles($source)) === 0) {
-                Log::channel('backup')->info('❌ No files to backup in the source directory: '.$source);
+                Log::channel(config('notifier.log_channel'))->info('❌ No files to backup in the source directory: '.$source);
                 throw new \Exception('No files to backup in the source directory: '.$source);
-            }            
+            }
 
             $files = new RecursiveIteratorIterator(
                 new RecursiveDirectoryIterator($source),
@@ -47,7 +47,7 @@ class NotifierStorageService
             );
 
             foreach ($files as $file) {
-                Log::channel('backup')->info('➡️ adding file: '.$file->getRealPath());
+                Log::channel(config('notifier.log_channel'))->info('➡️ adding file: '.$file->getRealPath());
                 // Skip directories (they will be added automatically)
                 if (! $file->isDir()) {
                     // Get real and relative path for the current file
@@ -62,25 +62,27 @@ class NotifierStorageService
                 }
             }
 
-            Log::channel('backup')->info('➡️ closing the backup file');
+            Log::channel(config('notifier.log_channel'))->info('➡️ closing the backup file');
             $zip->close();
 
-            chmod($path, 0777);
+            if (! chmod($path, 0600)) {
+                Log::channel(config('notifier.log_channel'))->warning('Could not set permissions on backup file', ['path' => $path]);
+            }
         }
 
-        Log::channel('backup')->info($path);
+        Log::channel(config('notifier.log_channel'))->info($path);
 
         return $path;
     }
 
     public static function sendStorageBackup(string $path)
     {
-        Log::channel('backup')->info('➡️ preparing file for sending');
+        Log::channel(config('notifier.log_channel'))->info('➡️ preparing file for sending');
 
         try {
             $client = new Client;
 
-            $response = $client->post(env('BACKUP_URL'), [
+            $response = $client->post(config('notifier.backup_url'), [
                 'multipart' => [
                     [
                         'name' => 'backup_file',
@@ -93,30 +95,30 @@ class NotifierStorageService
                     ],
                     [
                         'name' => 'password',
-                        'contents' => env('BACKUP_CODE'),
+                        'contents' => config('notifier.backup_code'),
                     ],
                 ],
             ]);
 
             if ($response->getStatusCode() == 200 || $response->getStatusCode() == 201) {
-                Log::channel('backup')->info('➡️ file was sent');
+                Log::channel(config('notifier.log_channel'))->info('➡️ file was sent');
 
                 File::delete($path);
 
-                Log::channel('backup')->info('➡️ file was deleted');
-                Log::channel('backup')->info('✅ END OF BACKUP');
+                Log::channel(config('notifier.log_channel'))->info('➡️ file was deleted');
+                Log::channel(config('notifier.log_channel'))->info('✅ END OF BACKUP');
             } else {
-                Log::error('❌ backup file could not be sent');
+                Log::channel(config('notifier.log_channel'))->error('❌ backup file could not be sent');
             }
 
             return $response->getBody();
         } catch (Throwable $th) {
-            Log::channel('backup')->emergency('❌ an error occurred while uploading a file', [
+            Log::channel(config('notifier.log_channel'))->emergency('❌ an error occurred while uploading a file', [
                 'th' => $th->getMessage(),
-                'env' => env('BACKUP_URL'),
-                'code' => env('BACKUP_CODE'),
+                'env' => config('notifier.backup_url'),
+                'code' => config('notifier.backup_code'),
             ]);
-            Log::channel('backup')->emergency('❌ END OF SESSION ❌');
+            Log::channel(config('notifier.log_channel'))->emergency('❌ END OF SESSION ❌');
         }
     }
 }
