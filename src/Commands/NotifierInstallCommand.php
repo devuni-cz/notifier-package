@@ -2,20 +2,20 @@
 
 namespace Devuni\Notifier\Commands;
 
+use Composer\InstalledVersions;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\File;
-use Composer\InstalledVersions;
-
 
 class NotifierInstallCommand extends Command
 {
     protected $signature = 'notifier:install';
+
     protected $description = 'Configure environment variables for Notifier package';
 
     public function handle()
     {
         $this->displayBanner();
-        if($this->ensureEnvFileExists() === static::FAILURE) {
+        if ($this->ensureEnvFileExists() === static::FAILURE) {
             return static::FAILURE;
         }
         $this->newLine();
@@ -35,27 +35,29 @@ class NotifierInstallCommand extends Command
 
         $this->newLine();
         $this->info('✅ Notifier environment configuration was saved successfully!');
+
         return static::SUCCESS;
     }
 
-    private function ensureEnvFileExists() : int
+    private function ensureEnvFileExists(): int
     {
-        if (!File::exists(base_path('.env'))){
+        if (! File::exists(base_path('.env'))) {
             $this->warn('❗ .env file does not exists.');
 
             if ($this->confirm('Do you want to create it from .env.example', true)) {
                 File::copy(base_path('.env.example'), base_path('.env'));
                 $this->info('✅ .env file created from env.example');
-            } 
-            else {
+            } else {
                 $this->error('❌ Installation aborted. .env file is required.');
+
                 return static::FAILURE;
             }
         }
+
         return static::SUCCESS;
     }
 
-    private function askRequired(string $question) : string 
+    private function askRequired(string $question): string
     {
         do {
             $value = $this->ask($question);
@@ -67,19 +69,19 @@ class NotifierInstallCommand extends Command
         return $value;
     }
 
-    private function updateEnv(array $data) : void
+    private function updateEnv(array $data): void
     {
         $envPath = base_path('.env');
         $envContent = file_get_contents($envPath);
 
-        foreach($data as $key => $value) {
+        foreach ($data as $key => $value) {
             $pattern = "/^{$key}=.*$/m";
             $line = "{$key}=\"{$value}\"";
 
             if (preg_match($pattern, $envContent)) {
                 $envContent = preg_replace($pattern, $line, $envContent);
             } else {
-                $envContent .= PHP_EOL . $line;
+                $envContent .= PHP_EOL.$line;
             }
         }
 
@@ -102,7 +104,7 @@ class NotifierInstallCommand extends Command
         $this->line('<fg=bright-blue>📁 Repository:</>       <fg=cyan;options=underscore>https://github.com/devuni-cz/notifier-package</>');
         $this->line('<fg=bright-blue>🌐 Website:</>          <fg=cyan;options=underscore>https://devuni.cz</>');
         $this->line('<fg=bright-blue>🔨 Developed by:</>     <fg=white>Devuni team</>');
-        $this->line('<fg=bright-blue>📅 Version:</>          <fg=white>'. $this->getCurrentVersion() . '</>');
+        $this->line('<fg=bright-blue>📅 Version:</>          <fg=white>'.$this->getCurrentVersion().'</>');
         $this->line('<fg=gray>──────────────────────────────────────────────────────────────────────────────</>');
         $this->newLine();
     }
@@ -116,5 +118,3 @@ class NotifierInstallCommand extends Command
         }
     }
 }
-
-
