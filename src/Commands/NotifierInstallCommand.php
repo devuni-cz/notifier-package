@@ -46,7 +46,7 @@ class NotifierInstallCommand extends Command
             if ($this->confirm('Do you want to create it from .env.example', true)) {
                 File::copy(base_path('.env.example'), base_path('.env'));
                 $this->info('✅ .env file created from env.example');
-            } 
+            }
             else {
                 $this->error('❌ Installation aborted. .env file is required.');
                 return static::FAILURE;
@@ -55,7 +55,7 @@ class NotifierInstallCommand extends Command
         return static::SUCCESS;
     }
 
-    private function askRequired(string $question) : string 
+    private function askRequired(string $question) : string
     {
         do {
             $value = $this->ask($question);
@@ -89,12 +89,12 @@ class NotifierInstallCommand extends Command
     private function displayBanner(): void
     {
         $this->line("<fg=bright-blue;options=bold>
-    _   __      __  _ _____                               __                  
-   / | / /___  / /_(_) __(_)__  _____   ____  ____ ______/ /______ _____ ____ 
+    _   __      __  _ _____                               __
+   / | / /___  / /_(_) __(_)__  _____   ____  ____ ______/ /______ _____ ____
   /  |/ / __ \/ __/ / /_/ / _ \/ ___/  / __ \/ __ `/ ___/ //_/ __ `/ __ `/ _ \
  / /|  / /_/ / /_/ / __/ /  __/ /     / /_/ / /_/ / /__/ ,< / /_/ / /_/ /  __/
-/_/ |_/\____/\__/_/_/ /_/\___/_/     / .___/\__,_/\___/_/|_|\__,_/\__, /\___/ 
-                                    /_/                          /____/       
+/_/ |_/\____/\__/_/_/ /_/\___/_/     / .___/\__,_/\___/_/|_|\__,_/\__, /\___/
+                                    /_/                          /____/
         </>");
         $this->line('<fg=bright-blue;options=bold>🎉 Welcome to the Notifier environment setup wizard</>');
         $this->line('<fg=gray>──────────────────────────────────────────────────────────────────────────────</>');
@@ -110,7 +110,7 @@ class NotifierInstallCommand extends Command
     private function getCurrentVersion(): string
     {
         try {
-            return InstalledVersions::getPrettyVersion('devuni/notifier-package');
+            return InstalledVersions::getPrettyVersion('devuni/notifier-package') ?? 'custom';
         } catch (\OutOfBoundsException $e) {
             return 'unknown';
         }
