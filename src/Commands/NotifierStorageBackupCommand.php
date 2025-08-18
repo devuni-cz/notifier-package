@@ -27,10 +27,6 @@ class NotifierStorageBackupCommand extends Command
     public function handle()
     {
         $backup_path = NotifierStorageService::createStorageBackup();
-
-        $this->info($backup_path);
-        info($backup_path);
-
         NotifierStorageService::sendStorageBackup($backup_path);
     }
 }

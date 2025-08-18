@@ -14,8 +14,6 @@ class NotifierDatabaseBackupCommand extends Command
     public function handle()
     {
         $backup_path = NotifierDatabaseService::createDatabaseBackup();
-        $this->info($backup_path);
-
         return NotifierDatabaseService::sendDatabaseBackup($backup_path);
     }
 }
