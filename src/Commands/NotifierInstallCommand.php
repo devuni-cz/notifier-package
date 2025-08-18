@@ -23,9 +23,9 @@ class NotifierInstallCommand extends Command
         $this->info('🔧 Please provide the required environment values:');
         $this->newLine();
 
-        $backupCode = $this->askRequired('BACKUP_CODE: ');
-        $backupUrl = $this->askRequired('BACKUP_URL: ');
-        $backupPassword = $this->askRequired('BACKUP_ZIP_PASSWORD: ');
+        $backupCode = $this->askRequired('👉 BACKUP_CODE: ');
+        $backupUrl = $this->askRequired('👉 BACKUP_URL: ');
+        $backupPassword = $this->askRequired('👉 BACKUP_ZIP_PASSWORD: ');
 
         $this->updateEnv([
             'BACKUP_CODE' => $backupCode,
@@ -33,22 +33,25 @@ class NotifierInstallCommand extends Command
             'BACKUP_ZIP_PASSWORD' => $backupPassword,
         ]);
 
-        $this->newLine();
         $this->info('✅ Notifier environment configuration was saved successfully!');
         return static::SUCCESS;
     }
 
-    private function ensureEnvFileExists() : int
+    private function ensureEnvFileExists(): int
     {
-        if (!File::exists(base_path('.env'))){
-            $this->warn('❗ .env file does not exists.');
+        if (!File::exists(base_path('.env'))) {
+            $this->warn('❗ Missing configuration file: <fg=gray>.env</>');
+            $this->newLine();
+            $this->line('<fg=gray>🔹 This package requires an <fg=green>.env</> file to store environment settings.</>');
+            $this->line('<fg=gray>🔹 You can create it from the template: <fg=green>.env.example</>');
+            $this->newLine();
 
-            if ($this->confirm('Do you want to create it from .env.example', true)) {
+            if ($this->confirm('👉 Do you want to create <fg=gray>.env</> from <fg=gray>.env.example</> ?', true)) {
                 File::copy(base_path('.env.example'), base_path('.env'));
-                $this->info('✅ .env file created from env.example');
+                $this->info('<fg=green;options=bold>✅ <fg=gray>.env</> file has been created.</>');
             }
             else {
-                $this->error('❌ Installation aborted. .env file is required.');
+                $this->error('<fg=white;options=bold;bg=red>❌ Installation aborted! .env file is required.</>');
                 return static::FAILURE;
             }
         }
