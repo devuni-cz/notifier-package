@@ -40,7 +40,7 @@ class NotifierInstallCommand extends Command
     private function ensureEnvFileExists(): int
     {
         if (!File::exists(base_path('.env'))) {
-            $this->warn('❗ Missing configuration file: <fg=gray>.env</>');
+            $this->warn('❗️ Missing configuration file: <fg=gray>.env</>');
             $this->newLine();
             $this->line('<fg=gray>🔹 This package requires an <fg=green>.env</> file to store environment settings.</>');
             $this->line('<fg=gray>🔹 You can create it from the template: <fg=green>.env.example</>');
