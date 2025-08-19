@@ -9,17 +9,24 @@ use Composer\InstalledVersions;
 
 class NotifierInstallCommand extends Command
 {
-    protected $signature = 'notifier:install';
+    protected $signature = 'notifier:install {--force : Overwrites existing environment variables}';
     protected $description = 'Configure environment variables for Notifier package';
 
     public function handle()
     {
-        $this->displayBanner();
+        if ($this->ifAlreadyInstalled()) {
+            $this->newLine();
+            $this->line('<bg=red;fg=white;options=bold> ERROR </> The Notifier configuration already exists. Use --force to overwrite.');
+            $this->newLine();
+            return static::FAILURE;
+        }
+
+        $this->displayBanner(); 
+
         if($this->ensureEnvFileExists() === static::FAILURE) {
             return static::FAILURE;
         }
-        $this->newLine();
-
+        
         $this->info('🔧 Please provide the required environment values:');
         $this->newLine();
 
@@ -87,6 +94,24 @@ class NotifierInstallCommand extends Command
         }
 
         file_put_contents($envPath, $envContent);
+    }
+
+    private function ifAlreadyInstalled(): bool
+    {
+        $envPath = base_path('.env');
+        if (!File::exists($envPath)) {
+            return false;
+        }
+        $envContent = file_get_contents($envPath);
+        $requiredKeys = ['BACKUP_CODE', 'BACKUP_URL', 'BACKUP_ZIP_PASSWORD'];
+        $alreadySet = collect($requiredKeys)->every(function($key) use ($envContent) {
+            if (preg_match("/^{$key}=(.*)$/m", $envContent, $matches)) {
+                $value = trim($matches[1], '"');
+                return $value !== '';
+            }
+            return false;
+        });
+        return $alreadySet && !$this->option('force');
     }
 
     private function displayBanner(): void
