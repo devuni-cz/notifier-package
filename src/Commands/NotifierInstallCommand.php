@@ -40,14 +40,14 @@ class NotifierInstallCommand extends Command
             'BACKUP_ZIP_PASSWORD' => $backupPassword,
         ]);
 
-        $this->info('✅ Notifier environment configuration was saved successfully!');
+        $this->line('<fg=white;bg=green;options=bold> DONE </> <fg=white>Notifier environment configuration was saved successfully!</>');
         return static::SUCCESS;
     }
 
     private function ensureEnvFileExists(): int
     {
         if (!File::exists(base_path('.env'))) {
-            $this->warn('❗️ Missing configuration file: <fg=gray>.env</>');
+            $this->line('<bg=yellow;options=bold> WARNING </> <fg=white>Missing configuration file: <fg=gray>.env</></>');
             $this->newLine();
             $this->line('<fg=gray>🔹 This package requires an <fg=green>.env</> file to store environment settings.</>');
             $this->line('<fg=gray>🔹 You can create it from the template: <fg=green>.env.example</>');
@@ -55,10 +55,13 @@ class NotifierInstallCommand extends Command
 
             if ($this->confirm('👉 Do you want to create <fg=gray>.env</> from <fg=gray>.env.example</> ?', true)) {
                 File::copy(base_path('.env.example'), base_path('.env'));
-                $this->info('<fg=green;options=bold>✅ <fg=gray>.env</> file has been created.</>');
+                $this->line('<fg=white;bg=green;options=bold> DONE </> <fg=white><fg=gray>.env</> file has been created.</>');
+                $this->newLine();
             }
             else {
-                $this->error('<fg=white;options=bold;bg=red>❌ Installation aborted! .env file is required.</>');
+                $this->newLine();
+                $this->line('<bg=red;fg=white;options=bold> ERROR </> <fg=white>Installation aborted! .env file is required.</>');
+                $this->newLine();
                 return static::FAILURE;
             }
         }
@@ -144,5 +147,4 @@ class NotifierInstallCommand extends Command
         }
     }
 }
-
 
