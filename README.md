@@ -54,6 +54,7 @@ The configuration file will be published to `config/notifier.php`. Here you can 
 -   Notification channels and recipients
 -   Backup storage locations
 -   Cleanup policies
+-   Excluded files from storage backup
 
 ## Usage
 
@@ -84,6 +85,10 @@ return [
         'enabled' => env('NOTIFIER_BACKUP_ENABLED', true),
         'path' => env('NOTIFIER_BACKUP_PATH', storage_path('app/backups')),
         'compress' => env('NOTIFIER_BACKUP_COMPRESS', true),
+        'excluded_files' => [
+            '.gitignore',
+            'public/test.txt',
+        ],
     ],
 
     'notifications' => [
