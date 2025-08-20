@@ -4,4 +4,22 @@ return [
     'backup_code' => env('BACKUP_CODE'),
     'backup_url' => env('BACKUP_URL'),
     'backup_zip_password' => env('BACKUP_ZIP_PASSWORD', 'secret123'),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Excluded Files
+    |--------------------------------------------------------------------------
+    |
+    | Here you may specify a list of files or files in directories that should be
+    | excluded from the backup process. Any file path that
+    | matches an entry in this array will not be copied into storage
+    | or included inside the generated ZIP archive.
+    |
+    | Examples:
+    | '.gitignore'       -> exclude the .gitignore file
+    | 'public\text.txt'  -> exclude a specific file inside public folder
+    */    
+    'excluded_files' => [
+        '.gitignore',
+    ]    
 ];

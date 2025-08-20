@@ -39,6 +39,7 @@ class NotifierStorageService
             $output->writeln('➡️  Adding files to the backup');
 
             $password = config('notifier.backup_zip_password');
+            $excludedFiles = config('notifier.excluded_files', []);
 
             $zip->setPassword($password);
 
@@ -55,12 +56,20 @@ class NotifierStorageService
             );
 
             foreach ($files as $file) {
-                Log::channel('backup')->info('➡️ adding file: '.$file->getRealPath());
                 // Skip directories (they will be added automatically)
                 if (! $file->isDir()) {
                     // Get real and relative path for the current file
                     $filePath = $file->getRealPath();
                     $relativePath = substr($filePath, strlen($source) + 1);
+
+                    foreach($excludedFiles as $skip) {
+                        if ($relativePath === $skip || str_starts_with($relativePath, $skip.'/')) {
+                            Log::channel('backup')->info('➡️ skipping excluded file: '. $relativePath);
+                            continue 2;
+                        }
+                    }
+
+                    Log::channel('backup')->info('➡️ adding file: '.$file->getRealPath());
 
                     // Add file to the ZIP archive
                     $zip->addFile($filePath, $relativePath);
