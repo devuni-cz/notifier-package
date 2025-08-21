@@ -26,7 +26,14 @@ class NotifierStorageBackupCommand extends Command
      */
     public function handle()
     {
+        $this->line('⚙️  STARTING NEW BACKUP ⚙️');
+        $this->newLine();
+
         $backup_path = NotifierStorageService::createStorageBackup();
+        $this->line('✅ Backup file created successfully at: ' . $backup_path);
         NotifierStorageService::sendStorageBackup($backup_path);
+
+        $this->newLine();
+        $this->line('✅ End of backup');        
     }
 }

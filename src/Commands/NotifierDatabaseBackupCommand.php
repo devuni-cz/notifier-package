@@ -13,7 +13,14 @@ class NotifierDatabaseBackupCommand extends Command
 
     public function handle()
     {
+        $this->line('⚙️  STARTING NEW BACKUP ⚙️');
+        $this->newLine();
+
         $backup_path = NotifierDatabaseService::createDatabaseBackup();
-        return NotifierDatabaseService::sendDatabaseBackup($backup_path);
+        $this->line('✅ Backup file created successfully at: ' . $backup_path);
+        NotifierDatabaseService::sendDatabaseBackup($backup_path);
+
+        $this->newLine();
+        $this->line('✅ End of backup');            
     }
 }

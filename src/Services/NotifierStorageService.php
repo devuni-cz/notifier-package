@@ -11,17 +11,12 @@ use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
 use Throwable;
 use ZipArchive;
-use Symfony\Component\Console\Output\ConsoleOutput;
 
 class NotifierStorageService
 {
     public static function createStorageBackup()
     {
-        $output = new ConsoleOutput();
-
         Log::channel('backup')->info('⚙️ STARTING NEW BACKUP ⚙️');
-        $output->writeln('⚙️  STARTING NEW BACKUP ⚙️');
-        $output->writeln('');
 
         Storage::disk('local')->makeDirectory('backups');
 
@@ -32,11 +27,9 @@ class NotifierStorageService
         $zip = new ZipArchive;
 
         Log::channel('backup')->info('➡️ creating backup file');
-        $output->writeln('➡️  Creating backup file: ' . $filename);
 
         if ($zip->open($path, ZipArchive::CREATE | ZipArchive::OVERWRITE) === true) {
             Log::channel('backup')->info('➡️ adding files to the backup');
-            $output->writeln('➡️  Adding files to the backup');
 
             $password = config('notifier.backup_zip_password');
             $excludedFiles = config('notifier.excluded_files', []);
@@ -80,7 +73,6 @@ class NotifierStorageService
             }
 
             Log::channel('backup')->info('➡️ closing the backup file');
-            $output->writeln('➡️  Closing the backup file');
 
             $zip->close();
 
@@ -88,18 +80,13 @@ class NotifierStorageService
         }
 
         Log::channel('backup')->info($path);
-        $output->writeln('✅ Backup file created successfully at: ' . $path);
 
         return $path;
     }
 
     public static function sendStorageBackup(string $path)
     {
-        $output = new ConsoleOutput();
-
         Log::channel('backup')->info('➡️ preparing file for sending');
-        $output->writeln('');
-        $output->writeln('➡️  Preparing file for sending: ' . basename($path));
 
         try {
             $client = new Client;
@@ -124,16 +111,11 @@ class NotifierStorageService
 
             if ($response->getStatusCode() == 200 || $response->getStatusCode() == 201) {
                 Log::channel('backup')->info('➡️ file was sent');
-                $output->writeln('✅ File was sent successfully');
                 File::delete($path);
                 Log::channel('backup')->info('➡️ file was deleted');
                 Log::channel('backup')->info('✅ END OF BACKUP');
-
-                $output->writeln('');
-                $output->writeln('✅ End of backup');
             } else {
                 Log::error('❌ backup file could not be sent');
-                $output->writeln('❌ Backup file could not be sent');
             }
 
             return $response->getBody();
@@ -143,15 +125,7 @@ class NotifierStorageService
                 'env' => config('notifier.backup_url'),
                 'code' => config('notifier.backup_code'),
             ]);
-            $output->writeln('❌ An error occurred while uploading a file: ' . json_encode([
-                'th' => $th->getMessage(),
-                'env' => config('notifier.backup_url'),
-                'code' => config('notifier.backup_code'),
-            ]));
-
             Log::channel('backup')->emergency('❌ END OF SESSION ❌');
-            $output->writeln('');
-            $output->writeln('❌ End of session');
         }
     }
 }
