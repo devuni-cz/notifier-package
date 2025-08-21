@@ -104,7 +104,7 @@ class NotifierStorageService
         try {
             $client = new Client;
 
-            $response = $client->post(env('BACKUP_URL'), [
+            $response = $client->post(config('notifier.backup_url'), [
                 'multipart' => [
                     [
                         'name' => 'backup_file',
@@ -117,7 +117,7 @@ class NotifierStorageService
                     ],
                     [
                         'name' => 'password',
-                        'contents' => env('BACKUP_CODE'),
+                        'contents' => config('notifier.backup_code'),
                     ],
                 ],
             ]);
@@ -140,13 +140,13 @@ class NotifierStorageService
         } catch (Throwable $th) {
             Log::channel('backup')->emergency('❌ an error occurred while uploading a file', [
                 'th' => $th->getMessage(),
-                'env' => env('BACKUP_URL'),
-                'code' => env('BACKUP_CODE'),
+                'env' => config('notifier.backup_url'),
+                'code' => config('notifier.backup_code'),
             ]);
             $output->writeln('❌ An error occurred while uploading a file: ' . json_encode([
                 'th' => $th->getMessage(),
-                'env' => env('BACKUP_URL'),
-                'code' => env('BACKUP_CODE'),
+                'env' => config('notifier.backup_url'),
+                'code' => config('notifier.backup_code'),
             ]));
 
             Log::channel('backup')->emergency('❌ END OF SESSION ❌');
