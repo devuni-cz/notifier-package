@@ -87,7 +87,7 @@ class NotifierController
             return response()->json([
                 'message' => 'Storage backup failed.',
                 'error' => $e->getMessage(),
-            ]);
+            ], 500);
         }
     }
 

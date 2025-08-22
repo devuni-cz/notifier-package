@@ -21,6 +21,7 @@ class NotifierDatabaseBackupCommand extends Command
         NotifierDatabaseService::sendDatabaseBackup($backup_path);
 
         $this->newLine();
-        $this->line('✅ End of backup');            
+        $this->line('✅ End of backup');    
+        return static::SUCCESS;        
     }
 }

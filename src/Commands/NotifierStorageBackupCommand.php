@@ -34,6 +34,7 @@ class NotifierStorageBackupCommand extends Command
         NotifierStorageService::sendStorageBackup($backup_path);
 
         $this->newLine();
-        $this->line('✅ End of backup');        
+        $this->line('✅ End of backup'); 
+        return static::SUCCESS;        
     }
 }
