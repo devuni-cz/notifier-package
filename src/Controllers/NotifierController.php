@@ -2,6 +2,7 @@
 
 namespace Devuni\Notifier\Controllers;
 
+use Devuni\Notifier\Services\NotifierConfigService;
 use Exception;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -10,12 +11,17 @@ use Illuminate\Support\Facades\Log;
 
 class NotifierController
 {
-    public function __invoke(Request $request): JsonResponse
+    public function __invoke(Request $request, NotifierConfigService $configService): JsonResponse
     {
         $request->validate(['param' => 'required|in:backup_database,backup_storage']);
-        
-        if ($response = $this->checkEnvironment()) {
-            return $response;
+
+        $missingVariables = $configService->checkEnvironment();
+
+        if (!empty($missingVariables)) {
+            return response()->json([
+                'message'   => 'The following environment variables are missing or empty:',
+                'variables' => $missingVariables,
+            ], 500);
         }
 
         return match ($request->param) {
@@ -23,32 +29,6 @@ class NotifierController
             'backup_storage' => $this->backupStorage(),
             default => $this->backupTypeNotFound($request)
         };
-    }
-
-    private function checkEnvironment(): ?JsonResponse
-    {
-        $missing_variables = [];
-
-        if (empty(config('notifier.backup_zip_password'))) {
-            $missing_variables[] = 'BACKUP_ZIP_PASSWORD';
-        }
-
-        if (empty(config('notifier.backup_code'))) {
-            $missing_variables[] = 'BACKUP_CODE';
-        }
-
-        if (empty(config('notifier.backup_url'))) {
-            $missing_variables[] = 'BACKUP_URL';
-        }
-
-        if (! empty($missing_variables)) {
-            return response()->json([
-                'message' => 'The following environment variables are missing or empty:',
-                'variables' => $missing_variables,
-            ], 500);
-        }
-
-        return null;
     }
 
     private function backupDatabase(): JsonResponse
