@@ -1,12 +1,13 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Devuni\Notifier\Services;
 
 use Carbon\Carbon;
 use GuzzleHttp\Client;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Storage;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
 use Throwable;
@@ -14,15 +15,16 @@ use ZipArchive;
 
 class NotifierStorageService
 {
-    public static function createStorageBackup()
+    public static function createStorageBackup(): string
     {
         Log::channel('backup')->info('⚙️ STARTING NEW BACKUP ⚙️');
 
-        Storage::disk('local')->makeDirectory('backups');
+        $backupDirectory = storage_path('app/private');
+        File::ensureDirectoryExists($backupDirectory);
 
         $filename = 'backup-'.Carbon::now()->format('Y-m-d').'.zip';
 
-        $path = storage_path('app/private/'.$filename);
+        $path = $backupDirectory.'/'.$filename;
 
         $zip = new ZipArchive;
 
@@ -55,9 +57,10 @@ class NotifierStorageService
                     $filePath = $file->getRealPath();
                     $relativePath = substr($filePath, strlen($source) + 1);
 
-                    foreach($excludedFiles as $skip) {
+                    foreach ($excludedFiles as $skip) {
                         if ($relativePath === $skip || str_starts_with($relativePath, $skip.'/')) {
-                            Log::channel('backup')->info('➡️ skipping excluded file: '. $relativePath);
+                            Log::channel('backup')->info('➡️ skipping excluded file: '.$relativePath);
+
                             continue 2;
                         }
                     }
