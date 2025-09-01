@@ -8,17 +8,18 @@ use GuzzleHttp\Client;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\File;
 use Symfony\Component\Process\Process;
-use Illuminate\Support\Facades\Storage;
 
 class NotifierDatabaseService
 {
-    public static function createDatabaseBackup()
+    public static function createDatabaseBackup() : string
     {
         Log::channel('backup')->info('⚙️ STARTING NEW BACKUP ⚙️');
 
+        $backupDirectory = storage_path('app/private');
+        File::ensureDirectoryExists($backupDirectory);
+
         $filename = 'backup-'.Carbon::now()->format('Y-m-d').'.sql';
-        Storage::disk('local')->makeDirectory('backups');
-        $path = storage_path('app/private/'.$filename);
+        $path = $backupDirectory.'/'.$filename;
 
         Log::channel('backup')->info('➡️ creating backup file');
 

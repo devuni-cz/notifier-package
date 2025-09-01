@@ -6,7 +6,6 @@ use Carbon\Carbon;
 use GuzzleHttp\Client;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Storage;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
 use Throwable;
@@ -14,15 +13,15 @@ use ZipArchive;
 
 class NotifierStorageService
 {
-    public static function createStorageBackup()
+    public static function createStorageBackup() : string
     {
         Log::channel('backup')->info('⚙️ STARTING NEW BACKUP ⚙️');
 
-        Storage::disk('local')->makeDirectory('backups');
+        $backupDirectory = storage_path('app/private');
+        File::ensureDirectoryExists($backupDirectory);
 
         $filename = 'backup-'.Carbon::now()->format('Y-m-d').'.zip';
-
-        $path = storage_path('app/private/'.$filename);
+        $path = $backupDirectory.'/'.$filename;
 
         $zip = new ZipArchive;
 
