@@ -30,6 +30,7 @@ class NotifierDatabaseService
             '--no-tablespaces',
             '--user='.$config['username'],
             '--password='.$config['password'],
+            '--port='.$config['port'],
             '--host='.$config['host'],
             '--result-file='.$path,
             $config['database'],
