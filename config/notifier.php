@@ -1,9 +1,9 @@
 <?php
 
 return [
-    'backup_code' => env('BACKUP_CODE'),
-    'backup_url' => env('BACKUP_URL'),
-    'backup_zip_password' => env('BACKUP_ZIP_PASSWORD', 'secret123'),
+    'backup_code' => env('BACKUP_CODE') ?: env('NOTIFIER_BACKUP_CODE'),
+    'backup_url' => env('BACKUP_URL') ?: env('NOTIFIER_URL'),
+    'backup_zip_password' => env('BACKUP_ZIP_PASSWORD') ?: env('NOTIFIER_BACKUP_PASSWORD', 'secret123'),
 
     /*
     |--------------------------------------------------------------------------
@@ -18,8 +18,8 @@ return [
     | Examples:
     | '.gitignore'       -> exclude the .gitignore file
     | 'public\text.txt'  -> exclude a specific file inside public folder
-    */    
+    */
     'excluded_files' => [
         '.gitignore',
-    ]    
+    ]
 ];
