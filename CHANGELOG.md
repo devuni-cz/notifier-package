@@ -103,7 +103,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 -   Initial release
--   Laravel 11 support
+-   Laravel 12 support
 -   Basic notifier functionality
 -   Comprehensive test suite
 -   GitHub Actions CI/CD

@@ -1,4 +1,4 @@
-# GitHub Copilot Setup for Laravel 11 Package Development
+# GitHub Copilot Setup for Laravel 12 Package Development
 
 This document explains the GitHub Copilot configuration for the Devuni\Notifier Laravel package.
 
@@ -26,7 +26,7 @@ This document explains the GitHub Copilot configuration for the Devuni\Notifier 
 Provides comprehensive guidelines for:
 
 -   PSR-12 coding standards
--   Laravel 11 best practices
+-   Laravel 12 best practices
 -   Dependency injection patterns
 -   Testing requirements
 -   Documentation standards
@@ -36,7 +36,7 @@ Provides comprehensive guidelines for:
 
 Optimized for Laravel package development with:
 
--   Laravel 11 compatibility focus
+-   Laravel 12 compatibility focus
 -   Service provider implementation
 -   Command registration
 -   Configuration publishing
@@ -78,7 +78,7 @@ Optimized for Laravel package development with:
 The setup ensures all generated code follows:
 
 -   `Devuni\Notifier` namespace convention
--   Laravel 11 best practices
+-   Laravel 12 best practices
 -   Proper dependency injection
 -   Comprehensive testing
 -   PSR-12 coding standards
