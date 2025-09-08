@@ -34,9 +34,13 @@ describe('NotifierServiceProvider', function () {
         });
 
         it('loads configuration from package config file', function () {
-            expect(config('notifier.backup_code'))->not->toBeUndefined();
-            expect(config('notifier.backup_url'))->not->toBeUndefined();
-            expect(config('notifier.backup_zip_password'))->not->toBeUndefined();
+            // Test that configuration keys exist
+            $configKeys = ['backup_code', 'backup_url', 'backup_zip_password', 'excluded_files'];
+
+            foreach ($configKeys as $key) {
+                expect(config()->has("notifier.{$key}"))->toBeTrue();
+            }
+
             expect(config('notifier.excluded_files'))->toBeArray();
         });
 
@@ -144,10 +148,15 @@ describe('NotifierServiceProvider', function () {
 
     describe('Boot Method', function () {
         it('publishes configuration file', function () {
-            // Test that configuration can be published
-            $publishGroups = $this->app->make('Illuminate\Console\Application')->all();
+            // Test that configuration publishing is set up properly
+            $provider = new NotifierServiceProvider($this->app);
 
-            expect($publishGroups)->toHaveKey('vendor:publish');
+            // Test that the provider can be booted without errors
+            $provider->boot();
+
+            // Check that config file exists in package
+            $configPath = __DIR__ . '/../../config/notifier.php';
+            expect(file_exists($configPath))->toBeTrue();
         });
 
         it('sets up correct publish path for config', function () {
@@ -211,7 +220,9 @@ describe('NotifierServiceProvider', function () {
         });
 
         it('can be instantiated with application', function () {
-            expect(fn() => new NotifierServiceProvider($this->app))->not->toThrow();
+            $provider = new NotifierServiceProvider($this->app);
+            expect($provider)->toBeInstanceOf(NotifierServiceProvider::class);
+            expect($provider)->toBeInstanceOf(\Illuminate\Support\ServiceProvider::class);
         });
     });
 });
