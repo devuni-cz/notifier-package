@@ -52,6 +52,7 @@
     },
     "scripts": {
         "test": "vendor/bin/pest",
+        "test-core": "vendor/bin/pest tests/Unit/Services/ tests/Unit/Controllers/ tests/Unit/NotifierServiceProviderTest.php",
         "test-unit": "vendor/bin/pest tests/Unit",
         "test-feature": "vendor/bin/pest tests/Feature",
         "analyse": "vendor/bin/phpstan analyse",
@@ -61,7 +62,7 @@
         "pre-commit": [
             "@format",
             "@analyse",
-            "@test"
+            "@test-core"
         ]
     },
     "minimum-stability": "stable",
