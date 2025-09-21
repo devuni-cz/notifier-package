@@ -10,11 +10,29 @@
     ],
     "homepage": "https://github.com/devuni-cz/notifier-package",
     "license": "MIT",
+    "require": {
+        "php": "^8.4",
+        "illuminate/support": "^12.30.1",
+        "guzzlehttp/guzzle": "^7.10.0"
+    },
+    "require-dev": {
+        "orchestra/testbench": "^10.6.0",
+        "mockery/mockery": "^1.6.12",
+        "laravel/pint": "^1.25.1",
+        "larastan/larastan": "^3.7.2",
+        "pestphp/pest": "^4.1.0"
+    },
     "authors": [
+        {
+            "name": "Janeček David",
+            "email": "janecek@devuni.cz",
+            "role": "Developer/Maintainer"
+        },
+
         {
             "name": "Ludwig Tomas",
             "email": "ludwig@devuni.cz",
-            "role": "Developer"
+            "role": "Developer/Maintainer"
         }
     ],
     "type": "library",
@@ -38,18 +56,7 @@
             ]
         }
     },
-    "require": {
-        "php": "^8.4",
-        "illuminate/support": "^12.2",
-        "guzzlehttp/guzzle": "^7.9"
-    },
-    "require-dev": {
-        "orchestra/testbench": "^10.6.0",
-        "mockery/mockery": "^1.6.12",
-        "laravel/pint": "^1.24.0",
-        "larastan/larastan": "^3.6.1",
-        "pestphp/pest": "^4.0.4"
-    },
+
     "scripts": {
         "test": "vendor/bin/pest",
         "test-core": "vendor/bin/pest tests/Unit/Services/ tests/Unit/Controllers/ tests/Unit/NotifierServiceProviderTest.php",
