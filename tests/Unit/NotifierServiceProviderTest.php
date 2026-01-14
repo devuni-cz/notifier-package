@@ -3,9 +3,10 @@
 declare(strict_types=1);
 
 use Devuni\Notifier\NotifierServiceProvider;
+use Devuni\Notifier\Commands\NotifierCheckCommand;
 use Devuni\Notifier\Commands\NotifierDatabaseBackupCommand;
-use Devuni\Notifier\Commands\NotifierStorageBackupCommand;
 use Devuni\Notifier\Commands\NotifierInstallCommand;
+use Devuni\Notifier\Commands\NotifierStorageBackupCommand;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Route;
 
@@ -77,13 +78,21 @@ describe('NotifierServiceProvider', function () {
             expect($commands['notifier:storage-backup'])->toBeInstanceOf(NotifierStorageBackupCommand::class);
         });
 
-        it('registers all three notifier commands', function () {
+        it('registers notifier check command', function () {
+            $commands = Artisan::all();
+
+            expect($commands)->toHaveKey('notifier:check');
+            expect($commands['notifier:check'])->toBeInstanceOf(NotifierCheckCommand::class);
+        });
+
+        it('registers all four notifier commands', function () {
             $commands = Artisan::all();
             $notifierCommands = array_filter(array_keys($commands), function ($command) {
                 return str_starts_with($command, 'notifier:');
             });
 
-            expect($notifierCommands)->toHaveCount(3);
+            expect($notifierCommands)->toHaveCount(4);
+            expect($notifierCommands)->toContain('notifier:check');
             expect($notifierCommands)->toContain('notifier:install');
             expect($notifierCommands)->toContain('notifier:database-backup');
             expect($notifierCommands)->toContain('notifier:storage-backup');

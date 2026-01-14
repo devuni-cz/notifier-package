@@ -20,6 +20,7 @@ describe('Notifier Package Basic Integration Tests', function () {
 
         it('registers all commands', function () {
             $commands = Artisan::all();
+            expect($commands)->toHaveKey('notifier:check');
             expect($commands)->toHaveKey('notifier:install');
             expect($commands)->toHaveKey('notifier:database-backup');
             expect($commands)->toHaveKey('notifier:storage-backup');

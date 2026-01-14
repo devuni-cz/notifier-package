@@ -158,6 +158,7 @@ describe('Backup Workflow Integration', function () {
             expect(config('notifier'))->not->toBeEmpty();
 
             // Test commands are registered
+            expect(Artisan::all())->toHaveKey('notifier:check');
             expect(Artisan::all())->toHaveKey('notifier:install');
             expect(Artisan::all())->toHaveKey('notifier:database-backup');
             expect(Artisan::all())->toHaveKey('notifier:storage-backup');

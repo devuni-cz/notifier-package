@@ -26,13 +26,12 @@
         {
             "name": "Janeček David",
             "email": "janecek@devuni.cz",
-            "role": "Developer/Maintainer"
+            "role": "Developer"
         },
-
         {
             "name": "Ludwig Tomas",
             "email": "ludwig@devuni.cz",
-            "role": "Developer/Maintainer"
+            "role": "Owner"
         }
     ],
     "type": "library",

@@ -1,10 +1,13 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Devuni\Notifier;
 
+use Devuni\Notifier\Commands\NotifierCheckCommand;
 use Devuni\Notifier\Commands\NotifierDatabaseBackupCommand;
-use Devuni\Notifier\Commands\NotifierStorageBackupCommand;
 use Devuni\Notifier\Commands\NotifierInstallCommand;
+use Devuni\Notifier\Commands\NotifierStorageBackupCommand;
 use Illuminate\Support\ServiceProvider;
 
 class NotifierServiceProvider extends ServiceProvider
@@ -23,9 +26,10 @@ class NotifierServiceProvider extends ServiceProvider
         $this->mergeConfigFrom(__DIR__.'/../config/notifier.php', 'notifier');
 
         $this->commands([
+            NotifierCheckCommand::class,
             NotifierDatabaseBackupCommand::class,
-            NotifierStorageBackupCommand::class,
             NotifierInstallCommand::class,
+            NotifierStorageBackupCommand::class,
         ]);
 
         require_once __DIR__.'/helpers.php';
