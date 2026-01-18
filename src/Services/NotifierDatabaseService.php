@@ -2,6 +2,7 @@
 
 namespace Devuni\Notifier\Services;
 
+use Devuni\Notifier\Support\NotifierLogger;
 use Throwable;
 use Carbon\Carbon;
 use GuzzleHttp\Client;
@@ -13,7 +14,7 @@ class NotifierDatabaseService
 {
     public static function createDatabaseBackup() : string
     {
-        Log::channel('backup')->info('⚙️ STARTING NEW BACKUP ⚙️');
+        NotifierLogger::get()->info('⚙️ STARTING NEW BACKUP ⚙️');
 
         $backupDirectory = storage_path('app/private');
         File::ensureDirectoryExists($backupDirectory);
@@ -21,7 +22,7 @@ class NotifierDatabaseService
         $filename = 'backup-'.Carbon::now()->format('Y-m-d').'.sql';
         $path = $backupDirectory.'/'.$filename;
 
-        Log::channel('backup')->info('➡️ creating backup file');
+        NotifierLogger::get()->info('➡️ creating backup file');
 
         $config = config('database.connections.mysql');
 
@@ -44,7 +45,7 @@ class NotifierDatabaseService
 
     public static function sendDatabaseBackup(string $path)
     {
-        Log::channel('backup')->info('➡️ preparing file for sending');
+        NotifierLogger::get()->info('➡️ preparing file for sending');
 
         try {
             $client = new Client;
@@ -68,19 +69,18 @@ class NotifierDatabaseService
             ]);
 
             if (in_array($response->getStatusCode(), [200, 201])) {
-                Log::channel('backup')->info('➡️ file was sent');
+                NotifierLogger::get()->info('➡️ file was sent');
                 File::delete($path);
-                Log::channel('backup')->info('➡️ file was deleted');
-                Log::channel('backup')->info('✅ END OF BACKUP');
+                NotifierLogger::get()->info('➡️ file was deleted');
+                NotifierLogger::get()->info('✅ END OF BACKUP');
             }
         } catch (Throwable $th) {
-            Log::channel('backup')->emergency('❌ an error occurred while uploading a file', [
+            NotifierLogger::get()->emergency('❌ an error occurred while uploading a file', [
                 'th' => $th->getMessage(),
                 'env' => config('notifier.backup_url'),
                 'code' => config('notifier.backup_code'),
             ]);
-
-            Log::channel('backup')->emergency('❌ END OF SESSION ❌');
+            NotifierLogger::get()->emergency('❌ END OF SESSION ❌');
         }
     }
 }

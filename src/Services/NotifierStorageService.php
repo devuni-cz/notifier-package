@@ -2,6 +2,7 @@
 
 namespace Devuni\Notifier\Services;
 
+use Devuni\Notifier\Support\NotifierLogger;
 use Carbon\Carbon;
 use GuzzleHttp\Client;
 use Illuminate\Support\Facades\File;
@@ -15,7 +16,7 @@ class NotifierStorageService
 {
     public static function createStorageBackup() : string
     {
-        Log::channel('backup')->info('⚙️ STARTING NEW BACKUP ⚙️');
+        NotifierLogger::get()->info('⚙️ STARTING NEW BACKUP ⚙️');
 
         $backupDirectory = storage_path('app/private');
         File::ensureDirectoryExists($backupDirectory);
@@ -25,10 +26,10 @@ class NotifierStorageService
 
         $zip = new ZipArchive;
 
-        Log::channel('backup')->info('➡️ creating backup file');
+        NotifierLogger::get()->info('➡️ creating backup file');
 
         if ($zip->open($path, ZipArchive::CREATE | ZipArchive::OVERWRITE) === true) {
-            Log::channel('backup')->info('➡️ adding files to the backup');
+            NotifierLogger::get()->info('➡️ adding files to the backup');
 
             $password = config('notifier.backup_zip_password');
             $excludedFiles = config('notifier.excluded_files', []);
@@ -38,7 +39,7 @@ class NotifierStorageService
             $source = storage_path('app/public');
 
             if (count(File::allFiles($source)) === 0) {
-                Log::channel('backup')->info('❌ No files to backup in the source directory: '.$source);
+                NotifierLogger::get()->info('❌ No files to backup in the source directory: '.$source);
                 throw new \Exception('No files to backup in the source directory: '.$source);
             }
 
@@ -56,12 +57,12 @@ class NotifierStorageService
 
                     foreach($excludedFiles as $skip) {
                         if ($relativePath === $skip || str_starts_with($relativePath, $skip.'/')) {
-                            Log::channel('backup')->info('➡️ skipping excluded file: '. $relativePath);
+                            NotifierLogger::get()->info('➡️ skipping excluded file: '. $relativePath);
                             continue 2;
                         }
                     }
 
-                    Log::channel('backup')->info('➡️ adding file: '.$file->getRealPath());
+                    NotifierLogger::get()->info('➡️ adding file: '.$file->getRealPath());
 
                     // Add file to the ZIP archive
                     $zip->addFile($filePath, $relativePath);
@@ -71,21 +72,21 @@ class NotifierStorageService
                 }
             }
 
-            Log::channel('backup')->info('➡️ closing the backup file');
+            NotifierLogger::get()->info('➡️ closing the backup file');
 
             $zip->close();
 
             chmod($path, 0777);
         }
 
-        Log::channel('backup')->info($path);
+        NotifierLogger::get()->info($path);
 
         return $path;
     }
 
     public static function sendStorageBackup(string $path)
     {
-        Log::channel('backup')->info('➡️ preparing file for sending');
+        NotifierLogger::get()->info('➡️ preparing file for sending');
 
         try {
             $client = new Client;
@@ -109,22 +110,22 @@ class NotifierStorageService
             ]);
 
             if ($response->getStatusCode() == 200 || $response->getStatusCode() == 201) {
-                Log::channel('backup')->info('➡️ file was sent');
+                NotifierLogger::get()->info('➡️ file was sent');
                 File::delete($path);
-                Log::channel('backup')->info('➡️ file was deleted');
-                Log::channel('backup')->info('✅ END OF BACKUP');
+                NotifierLogger::get()->info('➡️ file was deleted');
+                NotifierLogger::get()->info('✅ END OF BACKUP');
             } else {
-                Log::error('❌ backup file could not be sent');
+                NotifierLogger::get()->error('❌ backup file could not be sent');
             }
 
             return $response->getBody();
         } catch (Throwable $th) {
-            Log::channel('backup')->emergency('❌ an error occurred while uploading a file', [
+            NotifierLogger::get()->emergency('❌ an error occurred while uploading a file', [
                 'th' => $th->getMessage(),
                 'env' => config('notifier.backup_url'),
                 'code' => config('notifier.backup_code'),
             ]);
-            Log::channel('backup')->emergency('❌ END OF SESSION ❌');
+            NotifierLogger::get()->emergency('❌ END OF SESSION ❌');
         }
     }
 }
