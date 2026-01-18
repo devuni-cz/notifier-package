@@ -1,7 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-use Devuni\Notifier\Controllers\NotifierController;
+use Devuni\Notifier\Controllers\NotifierSendBackupController;
 
-Route::get('/api/backup', NotifierController::class)
+Route::get('/api/backup', NotifierSendBackupController::class)
     ->middleware('throttle:5,60');
