@@ -20,9 +20,7 @@ return [
     | 'telescope_entries_tags'  -> exclude Telescope relation table
     | 'pulse_entries'           -> exclude Laravel Pulse data
     */
-    'excluded_tables' => [
-        'cache',
-    ],
+    'excluded_tables' => [],
 
     /*
     |--------------------------------------------------------------------------
