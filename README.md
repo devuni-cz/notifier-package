@@ -112,6 +112,16 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Logging
+    |--------------------------------------------------------------------------
+    |
+    | Preferred logging channel for notifier.
+    |
+    */
+    'logging_channel' => env('NOTIFIER_LOGGING_CHANNEL', 'backup'),
+
+    /*
+    |--------------------------------------------------------------------------
     | Excluded Files
     |--------------------------------------------------------------------------
     |
@@ -146,6 +156,9 @@ BACKUP_ZIP_PASSWORD=your-zip-password
 NOTIFIER_BACKUP_CODE=alternative-backup-code
 NOTIFIER_URL=alternative-backup-url
 NOTIFIER_BACKUP_PASSWORD=alternative-zip-password
+
+# Optional logging configuration
+NOTIFIER_LOGGING_CHANNEL=your-logging-channel
 ```
 
 Use the install command to set these up interactively:
