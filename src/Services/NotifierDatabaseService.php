@@ -25,6 +25,7 @@ class NotifierDatabaseService
         NotifierLogger::get()->info('➡️ creating backup file');
 
         $config = config('database.connections.mysql');
+        $excludedTables = config('notifier.excluded_tables', []);
 
         $command = [
             'mysqldump',
@@ -32,10 +33,15 @@ class NotifierDatabaseService
             '--user='.$config['username'],
             '--password='.$config['password'],
             '--port='.$config['port'],
-            '--host='.$config['host'],
-            '--result-file='.$path,
-            $config['database'],
+            '--host='.$config['host']
         ];
+
+        foreach($excludedTables as $table) {
+            $command[] = '--ignore-table=' . $config['database'] . '.' . $table;
+        }
+
+        $command[] = '--result-file=' . $path;
+        $command[] = $config['database'];
 
         $process = new Process($command);
         $process->run();

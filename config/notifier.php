@@ -7,13 +7,22 @@ return [
 
     /*
     |--------------------------------------------------------------------------
-    | Logging
+    | Excluded Database Tables
     |--------------------------------------------------------------------------
     |
-    | Preferred logging channel for notifier.
+    | Here you may specify a list of database tables that should be
+    | excluded from the database backup process.
+    | Any table name listed here will be ignored when generating
+    | the SQL dump.
     |
+    | Examples:
+    | 'telescope_entries'        -> exclude Laravel Telescope data
+    | 'telescope_entries_tags'  -> exclude Telescope relation table
+    | 'pulse_entries'           -> exclude Laravel Pulse data
     */
-    'logging_channel' => env('NOTIFIER_LOGGING_CHANNEL', 'backup'),
+    'excluded_tables' => [
+        'cache',
+    ],
 
     /*
     |--------------------------------------------------------------------------
@@ -31,5 +40,15 @@ return [
     */
     'excluded_files' => [
         '.gitignore',
-    ]
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Logging
+    |--------------------------------------------------------------------------
+    |
+    | Preferred logging channel for notifier.
+    |
+    */
+    'logging_channel' => env('NOTIFIER_LOGGING_CHANNEL', 'backup'),
 ];
