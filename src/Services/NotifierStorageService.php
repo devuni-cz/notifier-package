@@ -36,7 +36,7 @@ class NotifierStorageService
 
             $zip->setPassword($password);
 
-            $source = storage_path('app/public');
+            $source = realpath(storage_path('app/public'));
 
             if (count(File::allFiles($source)) === 0) {
                 NotifierLogger::get()->info('❌ No files to backup in the source directory: '.$source);
