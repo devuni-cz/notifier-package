@@ -6,7 +6,6 @@ use Devuni\Notifier\Support\NotifierLogger;
 use Throwable;
 use Carbon\Carbon;
 use GuzzleHttp\Client;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\File;
 use Symfony\Component\Process\Process;
 
@@ -82,7 +81,7 @@ class NotifierDatabaseService
             }
         } catch (Throwable $th) {
             NotifierLogger::get()->emergency('❌ an error occurred while uploading a file', [
-                'th' => $th->getMessage(),
+                'error' => $th->getMessage(),
                 'env' => config('notifier.backup_url'),
                 'code' => config('notifier.backup_code'),
             ]);

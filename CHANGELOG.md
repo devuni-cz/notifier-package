@@ -7,6 +7,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.27] - 2026-01-26
+
+### Added
+
+-   `NotifierLogger` utility class with channel detection methods (`hasChannel`, `isUsingPreferredChannel`, `getPreferredChannel`)
+-   Logging channel check in `notifier:check` command
+
+### Changed
+
+-   Improved `NotifierLogger` with PSR-3 `LoggerInterface` return type
+-   Removed unused `Log` facade imports from services
+
+## [1.0.26] - 2026-01-26
+
+### Fixed
+
+-   Fixed file name truncation in storage backups on Laravel Forge deployments
+-   Use `realpath()` on source directory to match resolved file paths from symlinked deployment structures
+
+## [1.0.25] - 2026-01-26
+
+### Fixed
+
+-   Fixed `ZipArchive::setEncryptionName()` error when argument is empty in `NotifierStorageService`
+-   Added validation for `getRealPath()` returning false (broken symlinks)
+-   Added validation to skip files with empty relative paths during storage backup
+
 ## [1.0.0-beta.2] - 2024-12-19
 
 ### Added

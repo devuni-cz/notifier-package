@@ -36,7 +36,7 @@ class NotifierStorageService
 
             $zip->setPassword($password);
 
-            $source = storage_path('app/public');
+            $source = realpath(storage_path('app/public'));
 
             if (count(File::allFiles($source)) === 0) {
                 NotifierLogger::get()->info('❌ No files to backup in the source directory: '.$source);
@@ -53,11 +53,24 @@ class NotifierStorageService
                 if (! $file->isDir()) {
                     // Get real and relative path for the current file
                     $filePath = $file->getRealPath();
+
+                    // Skip if getRealPath() returns false (broken symlink, etc.)
+                    if ($filePath === false) {
+                        NotifierLogger::get()->warning('➡️ skipping file with invalid path: '.$file->getPathname());
+                        continue;
+                    }
+
                     $relativePath = substr($filePath, strlen($source) + 1);
 
-                    foreach($excludedFiles as $skip) {
+                    // Skip files with empty relative paths
+                    if (empty($relativePath)) {
+                        NotifierLogger::get()->warning('➡️ skipping file with empty relative path: '.$filePath);
+                        continue;
+                    }
+
+                    foreach ($excludedFiles as $skip) {
                         if ($relativePath === $skip || str_starts_with($relativePath, $skip.'/')) {
-                            NotifierLogger::get()->info('➡️ skipping excluded file: '. $relativePath);
+                            NotifierLogger::get()->info('➡️ skipping excluded file: '.$relativePath);
                             continue 2;
                         }
                     }
@@ -121,7 +134,7 @@ class NotifierStorageService
             return $response->getBody();
         } catch (Throwable $th) {
             NotifierLogger::get()->emergency('❌ an error occurred while uploading a file', [
-                'th' => $th->getMessage(),
+                'error' => $th->getMessage(),
                 'env' => config('notifier.backup_url'),
                 'code' => config('notifier.backup_code'),
             ]);

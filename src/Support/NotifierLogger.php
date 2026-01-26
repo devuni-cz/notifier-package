@@ -11,13 +11,27 @@ class NotifierLogger
 {
     public static function get(): LoggerInterface
     {
-        $channel = config('notifier.logging_channel', 'backup');
+        $preferredChannel = self::getPreferredChannel();
 
-        // Use configured channel if it exists, otherwise use app's default
-        if (! config("logging.channels.{$channel}")) {
-            $channel = config('logging.default', 'stack');
-        }
+        return self::hasChannel($preferredChannel)
+            ? Log::channel($preferredChannel)
+            : Log::channel('daily');
+    }
 
-        return Log::channel($channel);
+    public static function hasChannel(?string $channel = null): bool
+    {
+        $channel ??= self::getPreferredChannel();
+
+        return config("logging.channels.$channel") !== null;
+    }
+
+    public static function getPreferredChannel(): string
+    {
+        return config('notifier.logging_channel', 'backup');
+    }
+
+    public static function isUsingPreferredChannel(): bool
+    {
+        return self::hasChannel(self::getPreferredChannel());
     }
 }
