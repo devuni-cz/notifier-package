@@ -6,8 +6,9 @@ namespace Devuni\Notifier\Middleware;
 
 use Closure;
 use Illuminate\Http\Request;
-use Devuni\Notifier\Services\NotifierConfigService;
+use Devuni\Notifier\Support\NotifierLogger;
 use Symfony\Component\HttpFoundation\Response;
+use Devuni\Notifier\Services\NotifierConfigService;
 
 class VerifyNotifierTokenMiddleware
 {
@@ -27,10 +28,9 @@ class VerifyNotifierTokenMiddleware
             ], 500);
         }
 
-        // Verify token
         $expectedToken = config('notifier.backup_code');
-        $providedToken = $request->header('X-Notifier-Token')
-            ?? $request->input('token');
+
+        $providedToken = $request->header('X-Notifier-Token');
 
         if (empty($providedToken)) {
             return response()->json([
