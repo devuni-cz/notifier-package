@@ -9,10 +9,6 @@ use Psr\Log\LoggerInterface;
 
 class NotifierLogger
 {
-    /**
-     * Get the configured logger instance.
-     * Falls back to 'daily' channel if preferred channel doesn't exist.
-     */
     public static function get(): LoggerInterface
     {
         $preferredChannel = self::getPreferredChannel();
