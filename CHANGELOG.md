@@ -7,6 +7,52 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.0.0] - 2026-01-26
+
+### ⚠️ BREAKING CHANGES
+
+-   **API Endpoint**: Changed from `GET /api/backup` to `POST /api/notifier/backup`
+-   **Request Parameter**: Changed from `param` to `type`
+-   **Authentication**: Now requires `X-Notifier-Token` header or `token` parameter
+-   **Config**: Removed default password `secret123`, standardized env vars to `NOTIFIER_*`
+
+### Added
+
+-   `VerifyNotifierTokenMiddleware` - authentication and environment validation
+-   Response now includes `success`, `backup_type`, `duration_seconds`, `timestamp`
+-   Better error logging with stack traces
+
+### Changed
+
+-   Services now use Laravel `Http` facade instead of Guzzle
+-   Controller uses `Throwable` instead of `Exception`
+-   Environment check moved from controller to middleware
+-   Improved config documentation
+-   Cleaner `NotifierServiceProvider` without middleware alias registration
+
+### Removed
+
+-   Base `Controller` class (not needed for invokable controller)
+-   Hardcoded default ZIP password
+
+### Migration Guide
+
+Update your central application to use the new API:
+
+```php
+// Before
+$client->get($url . '/api/backup', [
+    'query' => ['param' => 'backup_storage'],
+]);
+
+// After
+Http::withHeaders([
+    'X-Notifier-Token' => $backupCode,
+])->post($url . '/api/notifier/backup', [
+    'type' => 'backup_storage',
+]);
+```
+
 ## [1.0.27] - 2026-01-26
 
 ### Added

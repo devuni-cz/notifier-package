@@ -17,36 +17,23 @@ class BackupRequest extends FormRequest
         return true;
     }
 
-    /**
-     * Get the validation rules that apply to the request.
-     *
-     * @return array<string, mixed>
-     */
     public function rules(): array
     {
         return [
-            'param' => ['required', Rule::enum(BackupTypeEnum::class)],
+            'type' => ['required', Rule::enum(BackupTypeEnum::class)],
         ];
     }
 
-    /**
-     * Get the backup type enum from the validated request.
-     */
     public function backupType(): BackupTypeEnum
     {
-        return BackupTypeEnum::from($this->validated('param'));
+        return BackupTypeEnum::from($this->validated('type'));
     }
 
-    /**
-     * Get custom messages for validator errors.
-     *
-     * @return array<string, string>
-     */
     public function messages(): array
     {
         return [
-            'param.required' => 'The backup type parameter is required.',
-            'param.Illuminate\Validation\Rules\Enum' => 'Invalid backup type. Allowed values: ' . implode(', ', BackupTypeEnum::values()),
+            'type.required' => 'The backup type parameter is required.',
+            'type.enum' => 'The backup type must be either "backup_database" or "backup_storage".',
         ];
     }
 
@@ -57,6 +44,7 @@ class BackupRequest extends FormRequest
     {
         throw new HttpResponseException(
             response()->json([
+                'success' => false,
                 'message' => 'Validation failed.',
                 'errors' => $validator->errors(),
             ], 422)

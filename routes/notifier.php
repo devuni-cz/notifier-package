@@ -2,6 +2,10 @@
 
 use Illuminate\Support\Facades\Route;
 use Devuni\Notifier\Controllers\NotifierSendBackupController;
+use Devuni\Notifier\Middleware\VerifyNotifierTokenMiddleware;
 
-Route::get('/api/backup', NotifierSendBackupController::class)
-    ->middleware('throttle:5,60');
+Route::post('/api/notifier/backup', NotifierSendBackupController::class)
+    ->middleware([
+        VerifyNotifierTokenMiddleware::class,
+        'throttle:5,60'
+    ]);

@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace Devuni\Notifier;
 
+use Illuminate\Support\ServiceProvider;
 use Devuni\Notifier\Commands\NotifierCheckCommand;
-use Devuni\Notifier\Commands\NotifierDatabaseBackupCommand;
 use Devuni\Notifier\Commands\NotifierInstallCommand;
 use Devuni\Notifier\Commands\NotifierStorageBackupCommand;
-use Illuminate\Support\ServiceProvider;
+use Devuni\Notifier\Commands\NotifierDatabaseBackupCommand;
 
 class NotifierServiceProvider extends ServiceProvider
 {

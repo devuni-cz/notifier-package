@@ -4,27 +4,18 @@ declare(strict_types=1);
 
 namespace Devuni\Notifier\Controllers;
 
+use Throwable;
+use Illuminate\Http\JsonResponse;
 use Devuni\Notifier\Enums\BackupTypeEnum;
 use Devuni\Notifier\Requests\BackupRequest;
-use Devuni\Notifier\Services\NotifierConfigService;
 use Devuni\Notifier\Support\NotifierLogger;
-use Exception;
-use Illuminate\Http\JsonResponse;
-use Illuminate\Support\Facades\Artisan;
+use Devuni\Notifier\Services\NotifierStorageService;
+use Devuni\Notifier\Services\NotifierDatabaseService;
 
 class NotifierSendBackupController
 {
-    public function __invoke(BackupRequest $request, NotifierConfigService $configService): JsonResponse
+    public function __invoke(BackupRequest $request): JsonResponse
     {
-        $missingVariables = $configService->checkEnvironment();
-
-        if (! empty($missingVariables)) {
-            return response()->json([
-                'message' => 'The following environment variables are missing or empty:',
-                'variables' => $missingVariables,
-            ], 500);
-        }
-
         return match ($request->backupType()) {
             BackupTypeEnum::Database => $this->backupDatabase(),
             BackupTypeEnum::Storage => $this->backupStorage(),
@@ -34,18 +25,32 @@ class NotifierSendBackupController
     private function backupDatabase(): JsonResponse
     {
         try {
-            NotifierLogger::get()->info('⚙️ STARTING NEW BACKUP ⚙️');
+            $startTime = microtime(true);
 
-            Artisan::call('notifier:database-backup');
+            $backupPath = NotifierDatabaseService::createDatabaseBackup();
+            NotifierDatabaseService::sendDatabaseBackup($backupPath);
+
+            $duration = round(microtime(true) - $startTime, 2);
 
             return response()->json([
-                'message' => 'Database backup has been created successfully.',
+                'success' => true,
+                'message' => 'Database backup completed successfully.',
+                'backup_type' => 'database',
+                'duration_seconds' => $duration,
+                'timestamp' => now()->toIso8601String(),
             ]);
-        } catch (Exception $e) {
-            NotifierLogger::get()->error('Database backup failed.', ['error' => $e->getMessage()]);
-            return response()->json([
-                'message' => 'Database backup failed.',
+        } catch (Throwable $e) {
+            NotifierLogger::get()->error('Database backup failed.', [
                 'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Database backup failed.',
+                'backup_type' => 'database',
+                'error' => $e->getMessage(),
+                'timestamp' => now()->toIso8601String(),
             ], 500);
         }
     }
@@ -53,19 +58,32 @@ class NotifierSendBackupController
     private function backupStorage(): JsonResponse
     {
         try {
-            NotifierLogger::get()->info('⚙️ STARTING NEW BACKUP ⚙️');
+            $startTime = microtime(true);
 
-            Artisan::call('notifier:storage-backup');
+            $backupPath = NotifierStorageService::createStorageBackup();
+            NotifierStorageService::sendStorageBackup($backupPath);
+
+            $duration = round(microtime(true) - $startTime, 2);
 
             return response()->json([
-                'message' => 'Storage backup has been created successfully.',
+                'success' => true,
+                'message' => 'Storage backup completed successfully.',
+                'backup_type' => 'storage',
+                'duration_seconds' => $duration,
+                'timestamp' => now()->toIso8601String(),
             ]);
-        } catch (Exception $e) {
-            NotifierLogger::get()->error('Storage backup failed.', ['error' => $e->getMessage()]);
+        } catch (Throwable $e) {
+            NotifierLogger::get()->error('Storage backup failed.', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
 
             return response()->json([
+                'success' => false,
                 'message' => 'Storage backup failed.',
+                'backup_type' => 'storage',
                 'error' => $e->getMessage(),
+                'timestamp' => now()->toIso8601String(),
             ], 500);
         }
     }

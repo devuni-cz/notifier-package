@@ -1,24 +1,54 @@
 <?php
 
 return [
-    'backup_code' => env('BACKUP_CODE') ?: env('NOTIFIER_BACKUP_CODE'),
-    'backup_url' => env('BACKUP_URL') ?: env('NOTIFIER_URL'),
-    'backup_zip_password' => env('BACKUP_ZIP_PASSWORD') ?: env('NOTIFIER_BACKUP_PASSWORD', 'secret123'),
+    /*
+    |--------------------------------------------------------------------------
+    | Authentication
+    |--------------------------------------------------------------------------
+    |
+    | The backup code is used to authenticate API requests from the central
+    | notifier application. This must match on both sides.
+    |
+    */
+    'backup_code' => env('NOTIFIER_BACKUP_CODE', env('BACKUP_CODE')),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Central Notifier URL
+    |--------------------------------------------------------------------------
+    |
+    | The URL where backup files will be sent. This is the endpoint on
+    | the central notifier.devuni.cz application.
+    |
+    */
+    'backup_url' => env('NOTIFIER_URL', env('BACKUP_URL')),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Backup ZIP Password
+    |--------------------------------------------------------------------------
+    |
+    | Password used to encrypt the storage backup ZIP files.
+    | This should be a strong, unique password.
+    |
+    */
+    'backup_zip_password' => env('NOTIFIER_BACKUP_PASSWORD', env('BACKUP_ZIP_PASSWORD')),
 
     /*
     |--------------------------------------------------------------------------
     | Excluded Database Tables
     |--------------------------------------------------------------------------
     |
-    | Here you may specify a list of database tables that should be
-    | excluded from the database backup process.
-    | Any table name listed here will be ignored when generating
-    | the SQL dump.
+    | Database tables that should be excluded from the database backup.
+    | Useful for excluding large log tables or temporary data.
     |
     | Examples:
-    | 'telescope_entries'        -> exclude Laravel Telescope data
-    | 'telescope_entries_tags'  -> exclude Telescope relation table
-    | 'pulse_entries'           -> exclude Laravel Pulse data
+    | - 'telescope_entries'      -> Laravel Telescope data
+    | - 'telescope_entries_tags' -> Telescope relation table
+    | - 'pulse_entries'          -> Laravel Pulse data
+    | - 'sessions'               -> User sessions
+    | - 'cache'                  -> Cache table
+    |
     */
     'excluded_tables' => [],
 
@@ -27,14 +57,14 @@ return [
     | Excluded Files
     |--------------------------------------------------------------------------
     |
-    | Here you may specify a list of files or files in directories that should be
-    | excluded from the backup process. Any file path that
-    | matches an entry in this array will not be copied into storage
-    | or included inside the generated ZIP archive.
+    | Files or directories that should be excluded from storage backup.
+    | Paths are relative to storage/app/public.
     |
     | Examples:
-    | '.gitignore'       -> exclude the .gitignore file
-    | 'public\text.txt'  -> exclude a specific file inside public folder
+    | - '.gitignore'        -> exclude .gitignore file
+    | - 'temp'              -> exclude entire temp directory
+    | - 'logs/debug.log'    -> exclude specific file
+    |
     */
     'excluded_files' => [
         '.gitignore',
@@ -45,7 +75,8 @@ return [
     | Logging
     |--------------------------------------------------------------------------
     |
-    | Preferred logging channel for notifier.
+    | The logging channel used for backup operations.
+    | Falls back to 'daily' if the specified channel doesn't exist.
     |
     */
     'logging_channel' => env('NOTIFIER_LOGGING_CHANNEL', 'backup'),

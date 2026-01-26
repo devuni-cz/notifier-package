@@ -1,12 +1,14 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Devuni\Notifier\Services;
 
 use Devuni\Notifier\Support\NotifierLogger;
 use Throwable;
 use Carbon\Carbon;
-use GuzzleHttp\Client;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Http;
 use Symfony\Component\Process\Process;
 
 class NotifierDatabaseService
@@ -48,42 +50,34 @@ class NotifierDatabaseService
         return $path;
     }
 
-    public static function sendDatabaseBackup(string $path)
+    public static function sendDatabaseBackup(string $path): void
     {
         NotifierLogger::get()->info('➡️ preparing file for sending');
 
         try {
-            $client = new Client;
+            $response = Http::timeout(300)
+                ->retry(3, 1000)
+                ->attach('backup_file', file_get_contents($path), basename($path))
+                ->post(config('notifier.backup_url'), [
+                    'backup_type' => 'backup_database',
+                    'password' => config('notifier.backup_code'),
+                ]);
 
-            $response = $client->post(config('notifier.backup_url'), [
-                'multipart' => [
-                    [
-                        'name' => 'backup_file',
-                        'contents' => fopen($path, 'r'),
-                        'filename' => basename($path),
-                    ],
-                    [
-                        'name' => 'backup_type',
-                        'contents' => 'backup_database',
-                    ],
-                    [
-                        'name' => 'password',
-                        'contents' => config('notifier.backup_code'),
-                    ],
-                ],
-            ]);
-
-            if (in_array($response->getStatusCode(), [200, 201])) {
+            if ($response->successful()) {
                 NotifierLogger::get()->info('➡️ file was sent');
                 File::delete($path);
                 NotifierLogger::get()->info('➡️ file was deleted');
                 NotifierLogger::get()->info('✅ END OF BACKUP');
+            } else {
+                NotifierLogger::get()->error('❌ backup file could not be sent', [
+                    'status' => $response->status(),
+                    'body' => $response->body(),
+                ]);
             }
         } catch (Throwable $th) {
             NotifierLogger::get()->emergency('❌ an error occurred while uploading a file', [
                 'error' => $th->getMessage(),
-                'env' => config('notifier.backup_url'),
-                'code' => config('notifier.backup_code'),
+                'url' => config('notifier.backup_url'),
             ]);
             NotifierLogger::get()->emergency('❌ END OF SESSION ❌');
         }
