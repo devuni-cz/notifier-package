@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Devuni\Notifier\Commands;
 
 use Devuni\Notifier\Services\NotifierConfigService;
+use Devuni\Notifier\Support\NotifierLogger;
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\GuzzleException;
 use Illuminate\Console\Command;
@@ -45,6 +46,7 @@ class NotifierCheckCommand extends Command
         $this->checkStorageDirectories();
         $this->checkMysqldumpAvailability();
         $this->checkZipExtension();
+        $this->checkLoggingChannel();
         $this->checkBackupUrlReachability();
 
         $this->newLine();
@@ -209,6 +211,24 @@ class NotifierCheckCommand extends Command
             $this->hasErrors = true;
             $this->line('   <fg=red>✗</> PHP ZIP extension is not loaded');
             $this->line('   <fg=gray>→ Install php-zip extension to enable storage backups</>');
+        }
+        $this->newLine();
+    }
+
+    /**
+     * Check if the preferred logging channel is configured.
+     */
+    private function checkLoggingChannel(): void
+    {
+        $this->line('<fg=yellow;options=bold>🔍 Checking logging channel...</>');
+
+        $preferredChannel = NotifierLogger::getPreferredChannel();
+
+        if (NotifierLogger::isUsingPreferredChannel()) {
+            $this->line("   <fg=green>✓</> Logging channel '<fg=cyan>{$preferredChannel}</>' is configured");
+        } else {
+            $this->line("   <fg=yellow>⚠</> Logging channel '<fg=cyan>{$preferredChannel}</>' not found, using '<fg=cyan>daily</>' fallback");
+            $this->line('   <fg=gray>→ Add the channel to config/logging.php for dedicated backup logs</>');
         }
         $this->newLine();
     }

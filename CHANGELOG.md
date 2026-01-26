@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.27] - 2026-01-26
+
+### Added
+
+-   `NotifierLogger` utility class with channel detection methods (`hasChannel`, `isUsingPreferredChannel`, `getPreferredChannel`)
+-   Logging channel check in `notifier:check` command
+
+### Changed
+
+-   Improved `NotifierLogger` with PSR-3 `LoggerInterface` return type
+-   Removed unused `Log` facade imports from services
+
 ## [1.0.26] - 2026-01-26
 
 ### Fixed

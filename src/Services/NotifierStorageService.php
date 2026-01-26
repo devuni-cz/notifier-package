@@ -134,7 +134,7 @@ class NotifierStorageService
             return $response->getBody();
         } catch (Throwable $th) {
             NotifierLogger::get()->emergency('❌ an error occurred while uploading a file', [
-                'th' => $th->getMessage(),
+                'error' => $th->getMessage(),
                 'env' => config('notifier.backup_url'),
                 'code' => config('notifier.backup_code'),
             ]);
