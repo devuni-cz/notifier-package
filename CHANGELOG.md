@@ -5,52 +5,67 @@ All notable changes to `devuni/notifier-package` will be documented in this file
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
 
 ## [2.0.0] - 2026-01-26
 
 ### ⚠️ BREAKING CHANGES
 
 -   **API Endpoint**: Changed from `GET /api/backup` to `POST /api/notifier/backup`
--   **Request Parameter**: Changed from `param` to `type`
--   **Authentication**: Now requires `X-Notifier-Token` header or `token` parameter
--   **Config**: Removed default password `secret123`, standardized env vars to `NOTIFIER_*`
+-   **Request Parameter**: Changed from `param` to `type` in `BackupRequest`
+-   **Authentication**: Now requires `X-Notifier-Token` header or `token` body parameter
+-   **Config**: Removed default password `secret123`, standardized env vars to `NOTIFIER_*` prefix
 
 ### Added
 
--   `VerifyNotifierTokenMiddleware` - authentication and environment validation
+-   `VerifyNotifierTokenMiddleware` - handles authentication and environment validation
+-   `NotifierLogger` utility class with channel detection methods
 -   Response now includes `success`, `backup_type`, `duration_seconds`, `timestamp`
 -   Better error logging with stack traces
+-   Logging channel check in `notifier:check` command
 
 ### Changed
 
--   Services now use Laravel `Http` facade instead of Guzzle
--   Controller uses `Throwable` instead of `Exception`
--   Environment check moved from controller to middleware
--   Improved config documentation
--   Cleaner `NotifierServiceProvider` without middleware alias registration
+-   **Routes**: `POST /api/notifier/backup` with middleware `VerifyNotifierTokenMiddleware::class`
+-   **Middleware**: Validates token + checks all required env variables
+-   **Controller**: Uses `Throwable` instead of `Exception`, removed env check (moved to middleware)
+-   **Request**: Parameter renamed from `param` to `type`, consistent error response format
+-   **Services**: Now use Laravel `Http` facade instead of Guzzle with timeout(300) and retry(3, 1000)
+-   **Config**: Better documentation, standardized `NOTIFIER_*` env variable names
+-   **ServiceProvider**: Simplified, removed middleware alias registration
 
 ### Removed
 
 -   Base `Controller` class (not needed for invokable controller)
--   Hardcoded default ZIP password
+-   Hardcoded default ZIP password `secret123`
+-   Guzzle direct dependency (using Laravel Http facade)
 
 ### Migration Guide
 
 Update your central application to use the new API:
 
 ```php
-// Before
+// Before (v1.x)
+$client = new GuzzleHttp\Client;
 $client->get($url . '/api/backup', [
     'query' => ['param' => 'backup_storage'],
 ]);
 
-// After
+// After (v2.0)
+use Illuminate\Support\Facades\Http;
+
 Http::withHeaders([
     'X-Notifier-Token' => $backupCode,
 ])->post($url . '/api/notifier/backup', [
-    'type' => 'backup_storage',
+    'type' => 'backup_storage',  // or 'backup_database'
 ]);
+```
+
+**Environment variables** (update your `.env`):
+```env
+NOTIFIER_BACKUP_CODE=your-secret-token
+NOTIFIER_URL=https://notifier.devuni.cz/api/receive-backup
+NOTIFIER_BACKUP_PASSWORD=strong-zip-password
+NOTIFIER_LOGGING_CHANNEL=backup
 ```
 
 ## [1.0.27] - 2026-01-26
