@@ -4,129 +4,142 @@ declare(strict_types=1);
 
 namespace Devuni\Notifier\Services;
 
-use Devuni\Notifier\Support\NotifierLogger;
-use Carbon\Carbon;
-use Illuminate\Support\Facades\File;
-use Illuminate\Support\Facades\Http;
-use RecursiveDirectoryIterator;
-use RecursiveIteratorIterator;
 use Throwable;
 use ZipArchive;
+use Carbon\Carbon;
+use RuntimeException;
+use RecursiveIteratorIterator;
+use RecursiveDirectoryIterator;
+use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Http;
+use Devuni\Notifier\Support\NotifierLogger;
 
 class NotifierStorageService
 {
-    public static function createStorageBackup() : string
+    public static function createStorageBackup(): string
     {
         NotifierLogger::get()->info('⚙️ STARTING NEW BACKUP ⚙️');
 
         $backupDirectory = storage_path('app/private');
         File::ensureDirectoryExists($backupDirectory);
 
-        $filename = 'backup-'.Carbon::now()->format('Y-m-d').'.zip';
-        $path = $backupDirectory.'/'.$filename;
+        $filename = 'backup-' . Carbon::now()->format('Y-m-d') . '.zip';
+        $path = $backupDirectory . '/' . $filename;
 
-        $zip = new ZipArchive;
+        $zip = new ZipArchive();
 
         NotifierLogger::get()->info('➡️ creating backup file');
 
-        if ($zip->open($path, ZipArchive::CREATE | ZipArchive::OVERWRITE) === true) {
-            NotifierLogger::get()->info('➡️ adding files to the backup');
+        if ($zip->open($path, ZipArchive::CREATE | ZipArchive::OVERWRITE) !== true) {
+            throw new \RuntimeException('Unable to create ZIP archive');
+        }
 
-            $password = config('notifier.backup_zip_password');
-            $excludedFiles = config('notifier.excluded_files', []);
+        $password = config('notifier.backup_zip_password');
+        $excludedFiles = config('notifier.excluded_files', []);
 
-            $zip->setPassword($password);
+        $zip->setPassword($password);
 
-            $source = realpath(storage_path('app/public'));
+        $source = realpath(storage_path('app/public'));
 
-            if (count(File::allFiles($source)) === 0) {
-                NotifierLogger::get()->info('❌ No files to backup in the source directory: '.$source);
-                throw new \Exception('No files to backup in the source directory: '.$source);
+        if (! $source || count(File::allFiles($source)) === 0) {
+            throw new RuntimeException('No files to backup in directory: ' . $source);
+        }
+
+        NotifierLogger::get()->info('➡️ adding files to the backup');
+
+        $files = new RecursiveIteratorIterator(
+            new RecursiveDirectoryIterator($source),
+            RecursiveIteratorIterator::SELF_FIRST
+        );
+
+        foreach ($files as $file) {
+            if ($file->isDir()) {
+                continue;
             }
 
-            $files = new RecursiveIteratorIterator(
-                new RecursiveDirectoryIterator($source),
-                RecursiveIteratorIterator::SELF_FIRST
-            );
+            $filePath = $file->getRealPath();
 
-            foreach ($files as $file) {
-                // Skip directories (they will be added automatically)
-                if (! $file->isDir()) {
-                    // Get real and relative path for the current file
-                    $filePath = $file->getRealPath();
+            if ($filePath === false) {
+                NotifierLogger::get()->warning('➡️ skipping invalid file: ' . $file->getPathname());
+                continue;
+            }
 
-                    // Skip if getRealPath() returns false (broken symlink, etc.)
-                    if ($filePath === false) {
-                        NotifierLogger::get()->warning('➡️ skipping file with invalid path: '.$file->getPathname());
-                        continue;
-                    }
+            $relativePath = substr($filePath, strlen($source) + 1);
 
-                    $relativePath = substr($filePath, strlen($source) + 1);
+            if ($relativePath === '') {
+                continue;
+            }
 
-                    // Skip files with empty relative paths
-                    if (empty($relativePath)) {
-                        NotifierLogger::get()->warning('➡️ skipping file with empty relative path: '.$filePath);
-                        continue;
-                    }
-
-                    foreach ($excludedFiles as $skip) {
-                        if ($relativePath === $skip || str_starts_with($relativePath, $skip.'/')) {
-                            NotifierLogger::get()->info('➡️ skipping excluded file: '.$relativePath);
-                            continue 2;
-                        }
-                    }
-
-                    NotifierLogger::get()->info('➡️ adding file: '.$file->getRealPath());
-
-                    // Add file to the ZIP archive
-                    $zip->addFile($filePath, $relativePath);
-
-                    // Encrypt the file with the password
-                    $zip->setEncryptionName($relativePath, ZipArchive::EM_AES_256);
+            foreach ($excludedFiles as $skip) {
+                if ($relativePath === $skip || str_starts_with($relativePath, $skip . '/')) {
+                    continue 2;
                 }
             }
 
-            NotifierLogger::get()->info('➡️ closing the backup file');
-
-            $zip->close();
-
-            chmod($path, 0777);
+            $zip->addFile($filePath, $relativePath);
+            $zip->setEncryptionName($relativePath, ZipArchive::EM_AES_256);
         }
 
-        NotifierLogger::get()->info($path);
+        $zip->close();
+
+        chmod($path, 0777);
+
+        NotifierLogger::get()->info('➡️ backup created', [
+            'path' => $path,
+            'size_mb' => round(filesize($path) / 1024 / 1024, 2),
+        ]);
 
         return $path;
     }
 
     public static function sendStorageBackup(string $path): void
     {
-        NotifierLogger::get()->info('➡️ preparing file for sending');
+        NotifierLogger::get()->info('➡️ preparing file for sending', [
+            'size_mb' => round(filesize($path) / 1024 / 1024, 2),
+        ]);
 
         try {
+            $stream = fopen($path, 'r');
+
+            if ($stream === false) {
+                throw new \RuntimeException('Unable to open backup file for streaming');
+            }
+
             $response = Http::timeout(300)
                 ->retry(3, 1000)
-                ->attach('backup_file', file_get_contents($path), basename($path))
+                ->attach(
+                    'backup_file',
+                    $stream,
+                    basename($path)
+                )
                 ->post(config('notifier.backup_url'), [
                     'backup_type' => 'backup_storage',
                     'password' => config('notifier.backup_code'),
                 ]);
 
-            if ($response->successful()) {
-                NotifierLogger::get()->info('➡️ file was sent');
-                File::delete($path);
-                NotifierLogger::get()->info('➡️ file was deleted');
-                NotifierLogger::get()->info('✅ END OF BACKUP');
-            } else {
-                NotifierLogger::get()->error('❌ backup file could not be sent', [
+            fclose($stream);
+
+            if (! $response->successful()) {
+                NotifierLogger::get()->error('❌ backup upload failed', [
                     'status' => $response->status(),
                     'body' => $response->body(),
                 ]);
+
+                return;
             }
+
+            NotifierLogger::get()->info('➡️ file was sent successfully');
+
+            File::delete($path);
+
+            NotifierLogger::get()->info('➡️ local backup deleted');
+            NotifierLogger::get()->info('✅ END OF BACKUP');
         } catch (Throwable $th) {
             NotifierLogger::get()->emergency('❌ an error occurred while uploading a file', [
                 'error' => $th->getMessage(),
                 'url' => config('notifier.backup_url'),
             ]);
+
             NotifierLogger::get()->emergency('❌ END OF SESSION ❌');
         }
     }
