@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.0.1] - 2026-02-05
+
+### Fixed
+
+-   Reduced memory usage during storage backup uploads by streaming the ZIP file
+-   Improved storage backup creation reliability with stricter ZIP creation checks
+-   Added clearer logging and validation for invalid file paths and empty backups
+
 ## [2.0.0] - 2026-01-26
 
 ### ⚠️ BREAKING CHANGES
@@ -182,5 +190,7 @@ Http::withHeaders([
 -   GitHub Actions CI/CD
 -   Documentation and examples
 
-[Unreleased]: https://github.com/devuni-cz/notifier-package/compare/v1.0.0...HEAD
+[Unreleased]: https://github.com/devuni-cz/notifier-package/compare/v2.0.1...HEAD
+[2.0.1]: https://github.com/devuni-cz/notifier-package/compare/v2.0.0...v2.0.1
+[2.0.0]: https://github.com/devuni-cz/notifier-package/releases/tag/v2.0.0
 [1.0.0]: https://github.com/devuni-cz/notifier-package/releases/tag/v1.0.0
