@@ -103,13 +103,19 @@ class NotifierStorageService
         NotifierLogger::get()->info('➡️ preparing file for sending');
 
         try {
+            $fileStream = fopen($path, 'r');
+
             $response = Http::timeout(300)
                 ->retry(3, 1000)
-                ->attach('backup_file', file_get_contents($path), basename($path))
+                ->attach('backup_file', $fileStream, basename($path))
                 ->post(config('notifier.backup_url'), [
                     'backup_type' => 'backup_storage',
                     'password' => config('notifier.backup_code'),
                 ]);
+
+            if (is_resource($fileStream)) {
+                fclose($fileStream);
+            }
 
             if ($response->successful()) {
                 NotifierLogger::get()->info('➡️ file was sent');
