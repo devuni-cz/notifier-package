@@ -4,16 +4,21 @@ declare(strict_types=1);
 
 namespace Devuni\Notifier\Controllers;
 
-use Throwable;
-use Illuminate\Http\JsonResponse;
 use Devuni\Notifier\Enums\BackupTypeEnum;
 use Devuni\Notifier\Requests\BackupRequest;
-use Devuni\Notifier\Support\NotifierLogger;
-use Devuni\Notifier\Services\NotifierStorageService;
 use Devuni\Notifier\Services\NotifierDatabaseService;
+use Devuni\Notifier\Services\NotifierStorageService;
+use Devuni\Notifier\Support\NotifierLogger;
+use Illuminate\Http\JsonResponse;
+use Throwable;
 
 class NotifierSendBackupController
 {
+    public function __construct(
+        private readonly NotifierDatabaseService $databaseService,
+        private readonly NotifierStorageService $storageService,
+    ) {}
+
     public function __invoke(BackupRequest $request): JsonResponse
     {
         return match ($request->backupType()) {
@@ -27,8 +32,8 @@ class NotifierSendBackupController
         try {
             $startTime = microtime(true);
 
-            $backupPath = NotifierDatabaseService::createDatabaseBackup();
-            NotifierDatabaseService::sendDatabaseBackup($backupPath);
+            $backupPath = $this->databaseService->createDatabaseBackup();
+            $this->databaseService->sendDatabaseBackup($backupPath);
 
             $duration = round(microtime(true) - $startTime, 2);
 
@@ -60,8 +65,8 @@ class NotifierSendBackupController
         try {
             $startTime = microtime(true);
 
-            $backupPath = NotifierStorageService::createStorageBackup();
-            NotifierStorageService::sendStorageBackup($backupPath);
+            $backupPath = $this->storageService->createStorageBackup();
+            $this->storageService->sendStorageBackup($backupPath);
 
             $duration = round(microtime(true) - $startTime, 2);
 

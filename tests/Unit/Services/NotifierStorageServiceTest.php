@@ -17,7 +17,7 @@ describe('NotifierStorageService', function () {
             $reflection = new ReflectionClass(NotifierStorageService::class);
             $method = $reflection->getMethod('createStorageBackup');
 
-            expect($method->isStatic())->toBeTrue();
+            expect($method->isStatic())->toBeFalse();
             expect($method->isPublic())->toBeTrue();
             expect($method->getReturnType()->getName())->toBe('string');
             expect($method->getNumberOfParameters())->toBe(0);
@@ -27,7 +27,7 @@ describe('NotifierStorageService', function () {
             $reflection = new ReflectionClass(NotifierStorageService::class);
             $method = $reflection->getMethod('sendStorageBackup');
 
-            expect($method->isStatic())->toBeTrue();
+            expect($method->isStatic())->toBeFalse();
             expect($method->isPublic())->toBeTrue();
             expect($method->getNumberOfParameters())->toBe(1);
 
@@ -161,7 +161,7 @@ describe('NotifierStorageService', function () {
             $validPath = '/valid/path/backup.zip';
 
             expect(empty($invalidPath))->toBeTrue();
-            expect(!empty($validPath))->toBeTrue();
+            expect(! empty($validPath))->toBeTrue();
         });
 
         it('validates zip archive operations', function () {

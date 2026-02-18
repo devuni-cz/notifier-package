@@ -5,38 +5,23 @@ declare(strict_types=1);
 namespace Devuni\Notifier\Commands;
 
 use Devuni\Notifier\Services\NotifierConfigService;
+use Devuni\Notifier\Services\Zip\CliZipCreator;
+use Devuni\Notifier\Services\Zip\PhpZipCreator;
 use Devuni\Notifier\Support\NotifierLogger;
-use GuzzleHttp\Client;
-use GuzzleHttp\Exception\GuzzleException;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Http;
 use Throwable;
 
 class NotifierCheckCommand extends Command
 {
-    /**
-     * The name and signature of the console command.
-     *
-     * @var string
-     */
     protected $signature = 'notifier:check';
 
-    /**
-     * The console command description.
-     *
-     * @var string
-     */
     protected $description = 'Check if Notifier package is configured correctly';
 
-    /**
-     * Track if any check failed.
-     */
     private bool $hasErrors = false;
 
-    /**
-     * Execute the console command.
-     */
     public function handle(NotifierConfigService $configService): int
     {
         $this->displayBanner();
@@ -45,7 +30,7 @@ class NotifierCheckCommand extends Command
         $this->checkDatabaseConnection();
         $this->checkStorageDirectories();
         $this->checkMysqldumpAvailability();
-        $this->checkZipExtension();
+        $this->checkZipAvailability();
         $this->checkLoggingChannel();
         $this->checkBackupUrlReachability();
 
@@ -54,11 +39,13 @@ class NotifierCheckCommand extends Command
         if ($this->hasErrors) {
             $this->line('<bg=red;fg=white;options=bold> RESULT </> <fg=red>Some checks failed. Please fix the issues above.</>');
             $this->newLine();
+
             return static::FAILURE;
         }
 
         $this->line('<bg=green;fg=white;options=bold> RESULT </> <fg=green>All checks passed! Notifier package is ready to use.</>');
         $this->newLine();
+
         return static::SUCCESS;
     }
 
@@ -106,9 +93,9 @@ class NotifierCheckCommand extends Command
         $backupUrl = config('notifier.backup_url');
         $backupPassword = config('notifier.backup_zip_password');
 
-        $this->line('   <fg=gray>BACKUP_CODE:</> ' . $this->maskValue($backupCode));
-        $this->line('   <fg=gray>BACKUP_URL:</> ' . $backupUrl);
-        $this->line('   <fg=gray>BACKUP_ZIP_PASSWORD:</> ' . $this->maskValue($backupPassword));
+        $this->line('   <fg=gray>BACKUP_CODE:</> '.$this->maskValue($backupCode));
+        $this->line('   <fg=gray>BACKUP_URL:</> '.$backupUrl);
+        $this->line('   <fg=gray>BACKUP_ZIP_PASSWORD:</> '.$this->maskValue($backupPassword));
     }
 
     /**
@@ -125,7 +112,7 @@ class NotifierCheckCommand extends Command
             return str_repeat('*', $length);
         }
 
-        return substr($value, 0, 3) . str_repeat('*', $length - 6) . substr($value, -3);
+        return substr($value, 0, 3).str_repeat('*', $length - 6).substr($value, -3);
     }
 
     /**
@@ -184,11 +171,11 @@ class NotifierCheckCommand extends Command
 
         $result = shell_exec('which mysqldump 2>/dev/null') ?? shell_exec('where mysqldump 2>nul');
 
-        if (!empty(trim($result ?? ''))) {
+        if (! empty(trim($result ?? ''))) {
             $version = shell_exec('mysqldump --version 2>&1');
             $this->line('   <fg=green>✓</> mysqldump is available');
             if ($version) {
-                $this->line('   <fg=gray>' . trim($version) . '</>');
+                $this->line('   <fg=gray>'.trim($version).'</>');
             }
         } else {
             $this->hasErrors = true;
@@ -198,20 +185,40 @@ class NotifierCheckCommand extends Command
         $this->newLine();
     }
 
-    /**
-     * Check if ZIP extension is available.
-     */
-    private function checkZipExtension(): void
+    private function checkZipAvailability(): void
     {
-        $this->line('<fg=yellow;options=bold>🔍 Checking PHP ZIP extension...</>');
+        $this->line('<fg=yellow;options=bold>🔍 Checking ZIP archive tools...</>');
 
-        if (extension_loaded('zip')) {
-            $this->line('   <fg=green>✓</> PHP ZIP extension is loaded');
+        $strategy = config('notifier.zip_strategy', 'auto');
+        $cliAvailable = CliZipCreator::isAvailable();
+        $phpAvailable = PhpZipCreator::isAvailable();
+
+        if ($cliAvailable) {
+            $this->line('   <fg=green>✓</> CLI 7z is available (recommended for production)');
         } else {
-            $this->hasErrors = true;
-            $this->line('   <fg=red>✗</> PHP ZIP extension is not loaded');
-            $this->line('   <fg=gray>→ Install php-zip extension to enable storage backups</>');
+            $this->line('   <fg=yellow>⚠</> CLI 7z is not installed');
+            $this->line('   <fg=gray>→ Install: sudo apt install p7zip-full</>');
         }
+
+        if ($phpAvailable) {
+            $this->line('   <fg=green>✓</> PHP ZIP extension is loaded (fallback)');
+        } else {
+            $this->line('   <fg=yellow>⚠</> PHP ZIP extension is not loaded');
+        }
+
+        if (! $cliAvailable && ! $phpAvailable) {
+            $this->hasErrors = true;
+            $this->line('   <fg=red>✗</> No ZIP strategy available — storage backups will fail');
+        } else {
+            $active = $cliAvailable ? 'cli (7z)' : 'php (ZipArchive)';
+
+            if ($strategy !== 'auto') {
+                $active = $strategy;
+            }
+
+            $this->line("   <fg=gray>Active strategy:</> <fg=cyan>{$active}</> <fg=gray>(config: {$strategy})</>");
+        }
+
         $this->newLine();
     }
 
@@ -233,9 +240,6 @@ class NotifierCheckCommand extends Command
         $this->newLine();
     }
 
-    /**
-     * Check if the backup URL is reachable.
-     */
     private function checkBackupUrlReachability(): void
     {
         $this->line('<fg=yellow;options=bold>🔍 Checking backup URL reachability...</>');
@@ -244,26 +248,23 @@ class NotifierCheckCommand extends Command
 
         if (empty($backupUrl)) {
             $this->line('   <fg=yellow>⚠</> Backup URL is not configured, skipping connectivity check');
+
             return;
         }
 
         try {
-            $client = new Client([
-                'timeout' => 10,
-                'connect_timeout' => 5,
-                'http_errors' => false,
-            ]);
-
-            // Extract base URL for connectivity check
             $parsedUrl = parse_url($backupUrl);
-            $baseUrl = ($parsedUrl['scheme'] ?? 'https') . '://' . ($parsedUrl['host'] ?? '');
+            $baseUrl = ($parsedUrl['scheme'] ?? 'https').'://'.($parsedUrl['host'] ?? '');
 
-            if (!empty($parsedUrl['port'])) {
-                $baseUrl .= ':' . $parsedUrl['port'];
+            if (! empty($parsedUrl['port'])) {
+                $baseUrl .= ':'.$parsedUrl['port'];
             }
 
-            $response = $client->head($baseUrl);
-            $statusCode = $response->getStatusCode();
+            $response = Http::timeout(5)
+                ->connectTimeout(5)
+                ->head($baseUrl);
+
+            $statusCode = $response->status();
 
             if ($statusCode < 500) {
                 $this->line("   <fg=green>✓</> Backup server is reachable: <fg=cyan>{$baseUrl}</>");
@@ -272,7 +273,7 @@ class NotifierCheckCommand extends Command
                 $this->hasErrors = true;
                 $this->line("   <fg=red>✗</> Backup server returned error: {$statusCode}");
             }
-        } catch (GuzzleException $e) {
+        } catch (Throwable $e) {
             $this->hasErrors = true;
             $this->line('   <fg=red>✗</> Cannot reach backup server');
             $this->line("   <fg=gray>→ Error: {$e->getMessage()}</>");

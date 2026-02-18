@@ -1,11 +1,13 @@
 <?php
 
-use Illuminate\Support\Facades\Route;
 use Devuni\Notifier\Controllers\NotifierSendBackupController;
 use Devuni\Notifier\Middleware\VerifyNotifierTokenMiddleware;
+use Illuminate\Support\Facades\Route;
 
-Route::post('/api/notifier/backup', NotifierSendBackupController::class)
+$prefix = config('notifier.route_prefix', 'api/notifier');
+
+Route::post("{$prefix}/backup", NotifierSendBackupController::class)
     ->middleware([
         VerifyNotifierTokenMiddleware::class,
-        'throttle:5,60'
+        'throttle:5,60',
     ]);
