@@ -5,8 +5,8 @@ declare(strict_types=1);
 use Devuni\Notifier\Services\NotifierConfigService;
 use Devuni\Notifier\Services\NotifierDatabaseService;
 use Devuni\Notifier\Services\NotifierStorageService;
-use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Config;
 
 describe('Backup Workflow Integration', function () {
     beforeEach(function () {
@@ -21,13 +21,13 @@ describe('Backup Workflow Integration', function () {
             'password' => 'test_pass',
             'host' => 'localhost',
             'port' => '3306',
-            'database' => 'test_db'
+            'database' => 'test_db',
         ]);
     });
 
     describe('Configuration Service Integration', function () {
         it('detects properly configured environment', function () {
-            $configService = new NotifierConfigService();
+            $configService = new NotifierConfigService;
             $missing = $configService->checkEnvironment();
 
             expect($missing)->toBeEmpty();
@@ -37,7 +37,7 @@ describe('Backup Workflow Integration', function () {
             Config::set('notifier.backup_code', '');
             Config::set('notifier.backup_url', null);
 
-            $configService = new NotifierConfigService();
+            $configService = new NotifierConfigService;
             $missing = $configService->checkEnvironment();
 
             expect($missing)->toContain('BACKUP_CODE');
@@ -148,10 +148,12 @@ describe('Backup Workflow Integration', function () {
     describe('End-to-End Configuration', function () {
         it('loads all package components correctly', function () {
             // Test service provider registration
-            expect($this->app->bound(NotifierConfigService::class))->toBeFalse(); // Not explicitly bound
+            expect($this->app->bound(NotifierConfigService::class))->toBeTrue();
+            expect($this->app->bound(NotifierDatabaseService::class))->toBeTrue();
+            expect($this->app->bound(NotifierStorageService::class))->toBeTrue();
 
             // Test that we can instantiate services
-            $configService = new NotifierConfigService();
+            $configService = new NotifierConfigService;
             expect($configService)->toBeInstanceOf(NotifierConfigService::class);
 
             // Test configuration is available
@@ -174,7 +176,7 @@ describe('Backup Workflow Integration', function () {
             expect($backupPassword)->toBe('test-password-123');
 
             // All services should use the same configuration
-            $configService = new NotifierConfigService();
+            $configService = new NotifierConfigService;
             $missing = $configService->checkEnvironment();
             expect($missing)->toBeEmpty();
         });

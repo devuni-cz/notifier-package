@@ -2,8 +2,8 @@
 
 declare(strict_types=1);
 
-use Devuni\Notifier\Services\NotifierDatabaseService;
 use Carbon\Carbon;
+use Devuni\Notifier\Services\NotifierDatabaseService;
 
 describe('NotifierDatabaseService', function () {
     beforeEach(function () {
@@ -31,7 +31,7 @@ describe('NotifierDatabaseService', function () {
         it('createDatabaseBackup method has correct signature', function () {
             $reflection = new ReflectionMethod(NotifierDatabaseService::class, 'createDatabaseBackup');
 
-            expect($reflection->isStatic())->toBeTrue();
+            expect($reflection->isStatic())->toBeFalse();
             expect($reflection->isPublic())->toBeTrue();
             expect($reflection->getReturnType()?->getName())->toBe('string');
             expect($reflection->getNumberOfParameters())->toBe(0);
@@ -40,7 +40,7 @@ describe('NotifierDatabaseService', function () {
         it('sendDatabaseBackup method has correct signature', function () {
             $reflection = new ReflectionMethod(NotifierDatabaseService::class, 'sendDatabaseBackup');
 
-            expect($reflection->isStatic())->toBeTrue();
+            expect($reflection->isStatic())->toBeFalse();
             expect($reflection->isPublic())->toBeTrue();
             expect($reflection->getNumberOfParameters())->toBe(1);
 
@@ -55,7 +55,7 @@ describe('NotifierDatabaseService', function () {
             // We can test the expected path format without actually creating the backup
             $expectedDate = Carbon::now()->format('Y-m-d');
             $expectedFilename = "backup-{$expectedDate}.sql";
-            $expectedPath = storage_path('app/private') . '/' . $expectedFilename;
+            $expectedPath = storage_path('app/private').'/'.$expectedFilename;
 
             // Test that our expected path format is correct
             expect($expectedPath)->toContain('backup-');
@@ -98,22 +98,26 @@ describe('NotifierDatabaseService', function () {
             $expectedCommand = [
                 'mysqldump',
                 '--no-tablespaces',
-                '--user=' . $config['username'],
-                '--password=' . $config['password'],
-                '--port=' . $config['port'],
-                '--host=' . $config['host'],
-                '--result-file=' . $testPath,
+                '--single-transaction',
+                '--quick',
+                '--user='.$config['username'],
+                '--password='.$config['password'],
+                '--port='.$config['port'],
+                '--host='.$config['host'],
+                '--result-file='.$testPath,
                 $config['database'],
             ];
 
             expect($expectedCommand[0])->toBe('mysqldump');
             expect($expectedCommand[1])->toBe('--no-tablespaces');
-            expect($expectedCommand[2])->toBe('--user=test_user');
-            expect($expectedCommand[3])->toBe('--password=test_password');
-            expect($expectedCommand[4])->toBe('--port=3306');
-            expect($expectedCommand[5])->toBe('--host=localhost');
-            expect($expectedCommand[6])->toBe('--result-file=/tmp/test-backup.sql');
-            expect($expectedCommand[7])->toBe('test_database');
+            expect($expectedCommand[2])->toBe('--single-transaction');
+            expect($expectedCommand[3])->toBe('--quick');
+            expect($expectedCommand[4])->toBe('--user=test_user');
+            expect($expectedCommand[5])->toBe('--password=test_password');
+            expect($expectedCommand[6])->toBe('--port=3306');
+            expect($expectedCommand[7])->toBe('--host=localhost');
+            expect($expectedCommand[8])->toBe('--result-file=/tmp/test-backup.sql');
+            expect($expectedCommand[9])->toBe('test_database');
         });
     });
 

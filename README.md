@@ -58,13 +58,17 @@ The configuration file will be published to `config/notifier.php`. Here you can 
 use Devuni\Notifier\Services\NotifierDatabaseService;
 use Devuni\Notifier\Services\NotifierStorageService;
 
-// Create a database backup
-$databaseBackupPath = NotifierDatabaseService::createDatabaseBackup();
-NotifierDatabaseService::sendDatabaseBackup($databaseBackupPath);
+// Resolve from the container (or inject via constructor)
+$databaseService = app(NotifierDatabaseService::class);
+$storageService = app(NotifierStorageService::class);
 
-// Create a storage backup
-$storageBackupPath = NotifierStorageService::createStorageBackup();
-NotifierStorageService::sendStorageBackup($storageBackupPath);
+// Create and send a database backup
+$databaseBackupPath = $databaseService->createDatabaseBackup();
+$databaseService->sendDatabaseBackup($databaseBackupPath);
+
+// Create and send a storage backup
+$storageBackupPath = $storageService->createStorageBackup();
+$storageService->sendStorageBackup($storageBackupPath);
 ```
 
 ### Artisan Commands
@@ -154,6 +158,14 @@ return [
     |
     */
     'logging_channel' => env('NOTIFIER_LOGGING_CHANNEL', 'backup'),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Routes
+    |--------------------------------------------------------------------------
+    */
+    'routes_enabled' => env('NOTIFIER_ROUTES_ENABLED', true),
+    'route_prefix' => env('NOTIFIER_ROUTE_PREFIX', 'api/notifier'),
 ];
 ```
 
@@ -176,6 +188,10 @@ NOTIFIER_BACKUP_PASSWORD=alternative-zip-password
 
 # Optional logging configuration
 NOTIFIER_LOGGING_CHANNEL=your-logging-channel
+
+# Optional route configuration
+NOTIFIER_ROUTES_ENABLED=true
+NOTIFIER_ROUTE_PREFIX=api/notifier
 ```
 
 Use the install command to set these up interactively:
