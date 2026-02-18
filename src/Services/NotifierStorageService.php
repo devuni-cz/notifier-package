@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Devuni\Notifier\Services;
 
 use Carbon\Carbon;
-use Devuni\Notifier\Services\Zip\ZipCreatorFactory;
+use Devuni\Notifier\Services\Zip\ZipManager;
 use Devuni\Notifier\Support\NotifierLogger;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Http;
@@ -36,7 +36,7 @@ class NotifierStorageService
         $password = config('notifier.backup_zip_password');
         $excludedFiles = config('notifier.excluded_files', []);
 
-        $zipCreator = ZipCreatorFactory::resolve();
+        $zipCreator = ZipManager::resolve();
         $fileCount = $zipCreator->create($source, $path, $password, $excludedFiles);
 
         NotifierLogger::get()->info("✅ backup archive created ({$fileCount} files): {$path}");

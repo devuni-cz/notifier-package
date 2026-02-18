@@ -7,7 +7,7 @@ namespace Devuni\Notifier\Services\Zip;
 use Devuni\Notifier\Contracts\ZipCreator;
 use RuntimeException;
 
-class ZipCreatorFactory
+class ZipManager
 {
     /**
      * Resolve the best available ZipCreator strategy.
