@@ -166,6 +166,18 @@ return [
     */
     'routes_enabled' => env('NOTIFIER_ROUTES_ENABLED', true),
     'route_prefix' => env('NOTIFIER_ROUTE_PREFIX', 'api/notifier'),
+
+    /*
+    |--------------------------------------------------------------------------
+    | ZIP Strategy
+    |--------------------------------------------------------------------------
+    |
+    | 'auto' (default) : CLI 7z if available, PHP ZipArchive fallback
+    | 'cli'            : Force CLI 7z (requires p7zip-full)
+    | 'php'            : Force PHP ZipArchive
+    |
+    */
+    'zip_strategy' => env('NOTIFIER_ZIP_STRATEGY', 'auto'),
 ];
 ```
 
@@ -192,6 +204,9 @@ NOTIFIER_LOGGING_CHANNEL=your-logging-channel
 # Optional route configuration
 NOTIFIER_ROUTES_ENABLED=true
 NOTIFIER_ROUTE_PREFIX=api/notifier
+
+# Optional ZIP strategy (auto, cli, php)
+NOTIFIER_ZIP_STRATEGY=auto
 ```
 
 Use the install command to set these up interactively:

@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Devuni\Notifier\Commands;
 
 use Devuni\Notifier\Services\NotifierConfigService;
+use Devuni\Notifier\Services\Zip\CliZipCreator;
+use Devuni\Notifier\Services\Zip\PhpZipCreator;
 use Devuni\Notifier\Support\NotifierLogger;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
@@ -28,7 +30,7 @@ class NotifierCheckCommand extends Command
         $this->checkDatabaseConnection();
         $this->checkStorageDirectories();
         $this->checkMysqldumpAvailability();
-        $this->checkZipExtension();
+        $this->checkZipAvailability();
         $this->checkLoggingChannel();
         $this->checkBackupUrlReachability();
 
@@ -183,20 +185,40 @@ class NotifierCheckCommand extends Command
         $this->newLine();
     }
 
-    /**
-     * Check if ZIP extension is available.
-     */
-    private function checkZipExtension(): void
+    private function checkZipAvailability(): void
     {
-        $this->line('<fg=yellow;options=bold>🔍 Checking PHP ZIP extension...</>');
+        $this->line('<fg=yellow;options=bold>🔍 Checking ZIP archive tools...</>');
 
-        if (extension_loaded('zip')) {
-            $this->line('   <fg=green>✓</> PHP ZIP extension is loaded');
+        $strategy = config('notifier.zip_strategy', 'auto');
+        $cliAvailable = CliZipCreator::isAvailable();
+        $phpAvailable = PhpZipCreator::isAvailable();
+
+        if ($cliAvailable) {
+            $this->line('   <fg=green>✓</> CLI 7z is available (recommended for production)');
         } else {
-            $this->hasErrors = true;
-            $this->line('   <fg=red>✗</> PHP ZIP extension is not loaded');
-            $this->line('   <fg=gray>→ Install php-zip extension to enable storage backups</>');
+            $this->line('   <fg=yellow>⚠</> CLI 7z is not installed');
+            $this->line('   <fg=gray>→ Install: sudo apt install p7zip-full</>');
         }
+
+        if ($phpAvailable) {
+            $this->line('   <fg=green>✓</> PHP ZIP extension is loaded (fallback)');
+        } else {
+            $this->line('   <fg=yellow>⚠</> PHP ZIP extension is not loaded');
+        }
+
+        if (! $cliAvailable && ! $phpAvailable) {
+            $this->hasErrors = true;
+            $this->line('   <fg=red>✗</> No ZIP strategy available — storage backups will fail');
+        } else {
+            $active = $cliAvailable ? 'cli (7z)' : 'php (ZipArchive)';
+
+            if ($strategy !== 'auto') {
+                $active = $strategy;
+            }
+
+            $this->line("   <fg=gray>Active strategy:</> <fg=cyan>{$active}</> <fg=gray>(config: {$strategy})</>");
+        }
+
         $this->newLine();
     }
 

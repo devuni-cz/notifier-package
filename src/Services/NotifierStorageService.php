@@ -5,13 +5,11 @@ declare(strict_types=1);
 namespace Devuni\Notifier\Services;
 
 use Carbon\Carbon;
+use Devuni\Notifier\Services\Zip\ZipCreatorFactory;
 use Devuni\Notifier\Support\NotifierLogger;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Http;
-use RecursiveDirectoryIterator;
-use RecursiveIteratorIterator;
 use Throwable;
-use ZipArchive;
 
 class NotifierStorageService
 {
@@ -25,98 +23,25 @@ class NotifierStorageService
         $filename = 'backup-'.Carbon::now()->format('Y-m-d').'.zip';
         $path = $backupDirectory.'/'.$filename;
 
-        $zip = new ZipArchive;
-
         NotifierLogger::get()->info('➡️ creating backup file');
 
-        if ($zip->open($path, ZipArchive::CREATE | ZipArchive::OVERWRITE) === true) {
-            NotifierLogger::get()->info('➡️ adding files to the backup');
+        $source = realpath(storage_path('app/public'));
 
-            $password = config('notifier.backup_zip_password');
-            $excludedFiles = config('notifier.excluded_files', []);
-
-            $zip->setPassword($password);
-
-            $source = realpath(storage_path('app/public'));
-
-            if ($source === false) {
-                throw new \RuntimeException(
-                    'Storage source directory does not exist: '.storage_path('app/public')
-                );
-            }
-
-            $files = new RecursiveIteratorIterator(
-                new RecursiveDirectoryIterator($source, RecursiveDirectoryIterator::SKIP_DOTS),
-                RecursiveIteratorIterator::SELF_FIRST
+        if ($source === false) {
+            throw new \RuntimeException(
+                'Storage source directory does not exist: '.storage_path('app/public')
             );
-
-            $fileCount = 0;
-
-            foreach ($files as $file) {
-                if ($file->isDir()) {
-                    continue;
-                }
-
-                $filePath = $file->getRealPath();
-
-                if ($filePath === false) {
-                    NotifierLogger::get()->warning('➡️ skipping file with invalid path: '.$file->getPathname());
-
-                    continue;
-                }
-
-                $relativePath = substr($filePath, strlen($source) + 1);
-
-                if (empty($relativePath)) {
-                    NotifierLogger::get()->warning('➡️ skipping file with empty relative path: '.$filePath);
-
-                    continue;
-                }
-
-                if ($this->isExcluded($relativePath, $excludedFiles)) {
-                    NotifierLogger::get()->info('➡️ skipping excluded file: '.$relativePath);
-
-                    continue;
-                }
-
-                NotifierLogger::get()->info('➡️ adding file: '.$filePath);
-
-                $zip->addFile($filePath, $relativePath);
-                $zip->setEncryptionName($relativePath, ZipArchive::EM_AES_256);
-                $fileCount++;
-            }
-
-            if ($fileCount === 0) {
-                $zip->close();
-                File::delete($path);
-
-                throw new \RuntimeException('No files to backup in the source directory: '.$source);
-            }
-
-            NotifierLogger::get()->info("➡️ closing the backup file ({$fileCount} files)");
-
-            $zip->close();
-
-            chmod($path, 0600);
         }
 
-        NotifierLogger::get()->info($path);
+        $password = config('notifier.backup_zip_password');
+        $excludedFiles = config('notifier.excluded_files', []);
+
+        $zipCreator = ZipCreatorFactory::resolve();
+        $fileCount = $zipCreator->create($source, $path, $password, $excludedFiles);
+
+        NotifierLogger::get()->info("✅ backup archive created ({$fileCount} files): {$path}");
 
         return $path;
-    }
-
-    /**
-     * Determine if a relative path matches any exclusion pattern.
-     */
-    private function isExcluded(string $relativePath, array $excludedFiles): bool
-    {
-        foreach ($excludedFiles as $skip) {
-            if ($relativePath === $skip || str_starts_with($relativePath, $skip.'/')) {
-                return true;
-            }
-        }
-
-        return false;
     }
 
     public function sendStorageBackup(string $path): void

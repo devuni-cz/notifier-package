@@ -95,4 +95,22 @@ return [
     */
     'routes_enabled' => env('NOTIFIER_ROUTES_ENABLED', true),
     'route_prefix' => env('NOTIFIER_ROUTE_PREFIX', 'api/notifier'),
+
+    /*
+    |--------------------------------------------------------------------------
+    | ZIP Strategy
+    |--------------------------------------------------------------------------
+    |
+    | Controls how storage backup ZIP archives are created.
+    |
+    | Options:
+    | - 'auto' (default) : Use CLI 7z if available, fall back to PHP ZipArchive
+    | - 'cli'            : Force CLI 7z (requires p7zip-full package)
+    | - 'php'            : Force PHP ZipArchive extension
+    |
+    | CLI 7z is recommended for production — it uses less memory,
+    | handles large files better, and runs in a separate process.
+    |
+    */
+    'zip_strategy' => env('NOTIFIER_ZIP_STRATEGY', 'auto'),
 ];
