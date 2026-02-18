@@ -4,27 +4,32 @@
 [![Total Downloads](https://img.shields.io/packagist/dt/devuni/notifier-package.svg?style=flat-square)](https://packagist.org/packages/devuni/notifier-package)
 [![Tests](https://github.com/devuni-cz/notifier-package/actions/workflows/tests.yml/badge.svg)](https://github.com/devuni-cz/notifier-package/actions/workflows/tests.yml)
 
-A Laravel 12 package for automated database backups and notifications.
+A Laravel 12 package for automated database and storage backups with secure remote uploads.
 
 ## Features
 
--   Automated database backups with mysqldump
--   Automated storage backups with ZIP compression
--   Secure backup uploads to remote servers
+-   Automated database backups with mysqldump (`--single-transaction`, `--quick`)
+-   Automated storage backups with ZIP compression (AES-256 encryption)
+-   Pluggable ZIP strategy — CLI 7z (recommended) with PHP ZipArchive fallback
+-   Secure backup uploads to remote servers with retry and timeout
+-   Token-based API authentication via `X-Notifier-Token` header
 -   Password-protected ZIP archives
--   File exclusion configuration
--   REST API for remote backup triggers
--   Comprehensive logging and error handling
--   Easy configuration and customization
+-   File and table exclusion configuration
+-   REST API for remote backup triggers (rate-limited)
+-   Configurable routes (prefix, enable/disable)
+-   Comprehensive logging with configurable channels
+-   Automatic backup file cleanup after upload
 
 ## Requirements
 
 -   PHP ^8.4
 -   Laravel ^12.2
+-   `mysqldump` for database backups
+-   `7z` (p7zip-full) recommended for storage backups, or PHP `zip` extension as fallback
 
 ## Installation
 
-You can install the package via composer:
+Install the package via composer:
 
 ```bash
 composer require devuni/notifier-package
@@ -36,19 +41,81 @@ Publish the configuration file:
 php artisan vendor:publish --provider="Devuni\Notifier\NotifierServiceProvider" --tag="config"
 ```
 
-Configure environment variables for Notifier package:
+Run the interactive installer to configure environment variables:
 
 ```bash
 php artisan notifier:install
 ```
+
+Verify your setup:
+
+```bash
+php artisan notifier:check
+```
+
 ## Configuration
 
-The configuration file will be published to `config/notifier.php`. Here you can configure:
+The configuration file will be published to `config/notifier.php`. You can configure:
 
--   Backup authentication codes and URLs
--   ZIP archive passwords
+-   Backup authentication token and upload URL
+-   ZIP archive password and encryption strategy
+-   Database table exclusions
 -   File exclusion patterns
--   Remote server endpoints
+-   Logging channel
+-   Route prefix and toggle
+
+### Configuration Options
+
+```php
+// config/notifier.php
+return [
+    // Authentication token for API requests
+    'backup_code' => env('NOTIFIER_BACKUP_CODE', env('BACKUP_CODE')),
+
+    // URL where backups will be uploaded
+    'backup_url' => env('NOTIFIER_URL', env('BACKUP_URL')),
+
+    // Password for ZIP encryption (AES-256)
+    'backup_zip_password' => env('NOTIFIER_BACKUP_PASSWORD', env('BACKUP_ZIP_PASSWORD')),
+
+    // Database tables to exclude from backup
+    'excluded_tables' => [],
+
+    // Files/directories to exclude from storage backup (relative to storage/app/public)
+    'excluded_files' => [
+        '.gitignore',
+    ],
+
+    // Logging channel (falls back to 'daily' if not found)
+    'logging_channel' => env('NOTIFIER_LOGGING_CHANNEL', 'backup'),
+
+    // Route configuration
+    'routes_enabled' => env('NOTIFIER_ROUTES_ENABLED', true),
+    'route_prefix' => env('NOTIFIER_ROUTE_PREFIX', 'api/notifier'),
+
+    // ZIP strategy: 'auto' (default), 'cli' (force 7z), 'php' (force ZipArchive)
+    'zip_strategy' => env('NOTIFIER_ZIP_STRATEGY', 'auto'),
+];
+```
+
+### Environment Variables
+
+```bash
+# Required — authentication and upload
+NOTIFIER_BACKUP_CODE=your-secret-token
+NOTIFIER_URL=https://your-backup-server.com/api/receive-backup
+NOTIFIER_BACKUP_PASSWORD=your-strong-zip-password
+
+# Optional — logging
+NOTIFIER_LOGGING_CHANNEL=backup
+
+# Optional — route customization
+NOTIFIER_ROUTES_ENABLED=true
+NOTIFIER_ROUTE_PREFIX=api/notifier
+
+# Optional — ZIP strategy (auto, cli, php)
+NOTIFIER_ZIP_STRATEGY=auto
+```
 
 ## Usage
 
@@ -73,158 +140,57 @@ $storageService->sendStorageBackup($storageBackupPath);
 
 ### Artisan Commands
 
-Create a database backup:
-
 ```bash
+# Create and upload a database backup
 php artisan notifier:database-backup
-```
 
-Create a storage backup:
-
-```bash
+# Create and upload a storage backup
 php artisan notifier:storage-backup
-```
 
-Install and configure the package:
+# Check package configuration and system requirements
+php artisan notifier:check
 
-```bash
+# Interactive environment setup
 php artisan notifier:install
 ```
 
-### API Endpoints
+### API Endpoint
 
 The package provides a REST API endpoint for triggering backups remotely:
 
 ```bash
 # Trigger database backup
-GET /api/backup?param=backup_database
+curl -X POST https://your-app.com/api/notifier/backup \
+  -H "X-Notifier-Token: your-secret-token" \
+  -d "type=backup_database"
 
 # Trigger storage backup
-GET /api/backup?param=backup_storage
+curl -X POST https://your-app.com/api/notifier/backup \
+  -H "X-Notifier-Token: your-secret-token" \
+  -d "type=backup_storage"
 ```
 
-**Note**: The API endpoint includes rate limiting (5 requests per minute) and requires proper environment configuration.
+The endpoint is rate-limited to 5 requests per minute and requires the `X-Notifier-Token` header for authentication.
 
-### Configuration Options
+### ZIP Strategy
 
-```php
-// config/notifier.php
-return [
-    'backup_code' => env('BACKUP_CODE') ?: env('NOTIFIER_BACKUP_CODE'),
-    'backup_url' => env('BACKUP_URL') ?: env('NOTIFIER_URL'),
-    'backup_zip_password' => env('BACKUP_ZIP_PASSWORD') ?: env('NOTIFIER_BACKUP_PASSWORD', 'secret123'),
+The package supports two ZIP creation strategies for storage backups:
 
-    /*
-    |--------------------------------------------------------------------------
-    | Excluded Database Tables
-    |--------------------------------------------------------------------------
-    |
-    | Here you may specify a list of database tables that should be
-    | excluded from the database backup process.
-    | Any table name listed here will be ignored when generating
-    | the SQL dump.
-    |
-    | Examples:
-    | 'telescope_entries'        -> exclude Laravel Telescope data
-    | 'telescope_entries_tags'  -> exclude Telescope relation table
-    | 'pulse_entries'           -> exclude Laravel Pulse data
-    */
-    'excluded_tables' => [],
+| Strategy | Tool | Encryption | Memory | Best for |
+|----------|------|------------|--------|----------|
+| `cli` | 7z (p7zip-full) | AES-256 | Low (separate process) | Production servers |
+| `php` | PHP ZipArchive | AES-256 | Higher (PHP memory) | Local development |
+| `auto` | Auto-detect | AES-256 | — | Default (recommended) |
 
-    /*
-    |--------------------------------------------------------------------------
-    | Excluded Files
-    |--------------------------------------------------------------------------
-    |
-    | Here you may specify a list of files or files in directories that should be
-    | excluded from the backup process. Any file path that
-    | matches an entry in this array will not be copied into storage
-    | or included inside the generated ZIP archive.
-    |
-    | Examples:
-    | '.gitignore'       -> exclude the .gitignore file
-    | 'public\text.txt'  -> exclude a specific file inside public folder
-    */
-    'excluded_files' => [
-        '.gitignore',
-    ],
-
-    /*
-    |--------------------------------------------------------------------------
-    | Logging
-    |--------------------------------------------------------------------------
-    |
-    | Preferred logging channel for notifier.
-    |
-    */
-    'logging_channel' => env('NOTIFIER_LOGGING_CHANNEL', 'backup'),
-
-    /*
-    |--------------------------------------------------------------------------
-    | Routes
-    |--------------------------------------------------------------------------
-    */
-    'routes_enabled' => env('NOTIFIER_ROUTES_ENABLED', true),
-    'route_prefix' => env('NOTIFIER_ROUTE_PREFIX', 'api/notifier'),
-
-    /*
-    |--------------------------------------------------------------------------
-    | ZIP Strategy
-    |--------------------------------------------------------------------------
-    |
-    | 'auto' (default) : CLI 7z if available, PHP ZipArchive fallback
-    | 'cli'            : Force CLI 7z (requires p7zip-full)
-    | 'php'            : Force PHP ZipArchive
-    |
-    */
-    'zip_strategy' => env('NOTIFIER_ZIP_STRATEGY', 'auto'),
-];
-```
-
-### Environment Variables
-
-The package requires the following environment variables to be configured:
+With `auto` (default), the package uses CLI 7z when available and falls back to PHP ZipArchive. Install 7z for best performance:
 
 ```bash
-# Required for backup authentication and upload
-BACKUP_CODE=your-secret-backup-code
-BACKUP_URL=https://your-backup-server.com/upload
-
-# Required for ZIP encryption (fallback: 'secret123')
-BACKUP_ZIP_PASSWORD=your-zip-password
-
-# Alternative environment variable names (fallbacks)
-NOTIFIER_BACKUP_CODE=alternative-backup-code
-NOTIFIER_URL=alternative-backup-url
-NOTIFIER_BACKUP_PASSWORD=alternative-zip-password
-
-# Optional logging configuration
-NOTIFIER_LOGGING_CHANNEL=your-logging-channel
-
-# Optional route configuration
-NOTIFIER_ROUTES_ENABLED=true
-NOTIFIER_ROUTE_PREFIX=api/notifier
-
-# Optional ZIP strategy (auto, cli, php)
-NOTIFIER_ZIP_STRATEGY=auto
-```
-
-Use the install command to set these up interactively:
-
-```bash
-php artisan notifier:install
+sudo apt install p7zip-full
 ```
 
 ## Testing
 
-This package uses [Pest](https://pestphp.com) for testing, providing a beautiful and expressive testing experience with comprehensive test coverage.
-
-### Test Suite
-
-The package includes:
-- **Unit Tests**: Service classes, commands, controllers, and configuration
-- **Feature Tests**: Integration testing and end-to-end workflows
-- **Mocking Support**: Complex scenarios with external dependencies
+This package uses [Pest](https://pestphp.com) for testing.
 
 ```bash
 # Run all tests

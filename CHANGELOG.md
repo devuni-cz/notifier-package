@@ -6,6 +6,51 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Unreleased]
+
+### ⚠️ BREAKING CHANGES
+
+-   **Services**: `NotifierDatabaseService` and `NotifierStorageService` are no longer static — use dependency injection or `app()` to resolve
+
+### Added
+
+-   `ZipCreator` interface contract for pluggable ZIP archive strategies
+-   `CliZipCreator` — creates ZIP archives using CLI 7z with AES-256 encryption (low memory, fast)
+-   `PhpZipCreator` — creates ZIP archives using PHP ZipArchive extension (fallback)
+-   `ZipManager` — auto-resolves the best available ZIP strategy
+-   `ChecksNotifierEnvironment` trait — shared environment validation for backup commands
+-   `zip_strategy` config option (`auto`, `cli`, `php`) with `NOTIFIER_ZIP_STRATEGY` env var
+-   `routes_enabled` and `route_prefix` config options for route customization
+-   `--single-transaction` and `--quick` flags to mysqldump for non-locking, memory-efficient dumps
+-   Exit code validation for mysqldump process — throws `RuntimeException` on failure
+-   `finally` block in both services for guaranteed backup file cleanup
+-   Services registered as singletons in the service container
+
+### Changed
+
+-   **Services**: Converted from static classes to injectable singletons (resolve via DI or `app()`)
+-   **Storage backup**: ZIP creation delegated to strategy pattern (`ZipManager`) instead of inline `ZipArchive`
+-   **Database backup**: File upload now uses `fopen()` stream instead of `file_get_contents()` to prevent memory exhaustion on large databases
+-   **Storage backup**: File permissions changed from `0777` to `0600` for security
+-   **Storage backup**: Eliminated double directory scan (removed `File::allFiles()` pre-check)
+-   **Storage backup**: Added `realpath()` validation before using source directory
+-   **Check command**: ZIP check now verifies both 7z CLI and PHP zip extension availability
+-   **Check command**: Replaced direct Guzzle usage with Laravel `Http` facade for URL reachability check
+-   **Controller**: Uses constructor injection for services instead of static calls
+-   **Routes**: Conditionally loaded based on `routes_enabled` config, prefix configurable via `route_prefix`
+-   **README**: Rewritten to reflect v2 API (`POST`, token auth, DI usage, ZIP strategy docs)
+
+### Removed
+
+-   Duplicated `checkMissingVariables()` methods from backup commands (replaced by `ChecksNotifierEnvironment` trait)
+-   Direct `ZipArchive` usage from `NotifierStorageService` (moved to `PhpZipCreator`)
+-   `RecursiveDirectoryIterator` imports from `NotifierStorageService`
+
+### Security
+
+-   Backup ZIP files now created with `0600` permissions instead of `0777`
+-   Database backup files are always cleaned up via `finally` block, even on upload failure
+
 ## [2.0.0] - 2026-01-26
 
 ### ⚠️ BREAKING CHANGES
@@ -197,5 +242,6 @@ NOTIFIER_LOGGING_CHANNEL=backup
 -   GitHub Actions CI/CD
 -   Documentation and examples
 
-[Unreleased]: https://github.com/devuni-cz/notifier-package/compare/v1.0.0...HEAD
+[Unreleased]: https://github.com/devuni-cz/notifier-package/compare/v2.0.0...HEAD
+[2.0.0]: https://github.com/devuni-cz/notifier-package/compare/v1.0.27...v2.0.0
 [1.0.0]: https://github.com/devuni-cz/notifier-package/releases/tag/v1.0.0
