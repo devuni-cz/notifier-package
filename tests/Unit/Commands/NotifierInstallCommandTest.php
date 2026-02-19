@@ -3,17 +3,15 @@
 declare(strict_types=1);
 
 use Devuni\Notifier\Commands\NotifierInstallCommand;
-use Devuni\Notifier\Services\NotifierConfigService;
 use Illuminate\Support\Facades\File;
-use Composer\InstalledVersions;
 use Mockery;
 
 describe('NotifierInstallCommand', function () {
     beforeEach(function () {
         // Mock the base path to a test directory
         $this->testBasePath = '/tmp/test-laravel';
-        $this->envPath = $this->testBasePath . '/.env';
-        $this->envExamplePath = $this->testBasePath . '/.env.example';
+        $this->envPath = $this->testBasePath.'/.env';
+        $this->envExamplePath = $this->testBasePath.'/.env.example';
     });
 
     afterEach(function () {

@@ -2,14 +2,14 @@
 
 namespace Devuni\Notifier\Commands;
 
+use Composer\InstalledVersions;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\File;
-use Composer\InstalledVersions;
-
 
 class NotifierInstallCommand extends Command
 {
     protected $signature = 'notifier:install {--force : Overwrites existing environment variables}';
+
     protected $description = 'Configure environment variables for Notifier package';
 
     public function handle()
@@ -18,15 +18,16 @@ class NotifierInstallCommand extends Command
             $this->newLine();
             $this->line('<bg=red;fg=white;options=bold> ERROR </> The Notifier configuration already exists. Use --force to overwrite.');
             $this->newLine();
+
             return static::FAILURE;
         }
 
-        $this->displayBanner(); 
+        $this->displayBanner();
 
-        if($this->ensureEnvFileExists() === static::FAILURE) {
+        if ($this->ensureEnvFileExists() === static::FAILURE) {
             return static::FAILURE;
         }
-        
+
         $this->info('🔧 Please provide the required environment values:');
         $this->newLine();
 
@@ -41,12 +42,13 @@ class NotifierInstallCommand extends Command
         ]);
 
         $this->line('<fg=white;bg=green;options=bold> DONE </> <fg=white>Notifier environment configuration was saved successfully!</>');
+
         return static::SUCCESS;
     }
 
     private function ensureEnvFileExists(): int
     {
-        if (!File::exists(base_path('.env'))) {
+        if (! File::exists(base_path('.env'))) {
             $this->line('<bg=yellow;options=bold> WARNING </> <fg=white>Missing configuration file: <fg=gray>.env</></>');
             $this->newLine();
             $this->line('<fg=gray>🔹 This package requires an <fg=green>.env</> file to store environment settings.</>');
@@ -57,18 +59,19 @@ class NotifierInstallCommand extends Command
                 File::copy(base_path('.env.example'), base_path('.env'));
                 $this->line('<fg=white;bg=green;options=bold> DONE </> <fg=white><fg=gray>.env</> file has been created.</>');
                 $this->newLine();
-            }
-            else {
+            } else {
                 $this->newLine();
                 $this->line('<bg=red;fg=white;options=bold> ERROR </> <fg=white>Installation aborted! .env file is required.</>');
                 $this->newLine();
+
                 return static::FAILURE;
             }
         }
+
         return static::SUCCESS;
     }
 
-    private function askRequired(string $question) : string
+    private function askRequired(string $question): string
     {
         do {
             $value = $this->ask($question);
@@ -80,19 +83,19 @@ class NotifierInstallCommand extends Command
         return $value;
     }
 
-    private function updateEnv(array $data) : void
+    private function updateEnv(array $data): void
     {
         $envPath = base_path('.env');
         $envContent = file_get_contents($envPath);
 
-        foreach($data as $key => $value) {
+        foreach ($data as $key => $value) {
             $pattern = "/^{$key}=.*$/m";
             $line = "{$key}=\"{$value}\"";
 
             if (preg_match($pattern, $envContent)) {
                 $envContent = preg_replace($pattern, $line, $envContent);
             } else {
-                $envContent .= PHP_EOL . $line;
+                $envContent .= PHP_EOL.$line;
             }
         }
 
@@ -102,19 +105,22 @@ class NotifierInstallCommand extends Command
     private function ifAlreadyInstalled(): bool
     {
         $envPath = base_path('.env');
-        if (!File::exists($envPath)) {
+        if (! File::exists($envPath)) {
             return false;
         }
         $envContent = file_get_contents($envPath);
         $requiredKeys = ['BACKUP_CODE', 'BACKUP_URL', 'BACKUP_ZIP_PASSWORD'];
-        $alreadySet = collect($requiredKeys)->every(function($key) use ($envContent) {
+        $alreadySet = collect($requiredKeys)->every(function ($key) use ($envContent) {
             if (preg_match("/^{$key}=(.*)$/m", $envContent, $matches)) {
                 $value = trim($matches[1], '"');
+
                 return $value !== '';
             }
+
             return false;
         });
-        return $alreadySet && !$this->option('force');
+
+        return $alreadySet && ! $this->option('force');
     }
 
     private function displayBanner(): void
@@ -133,7 +139,7 @@ class NotifierInstallCommand extends Command
         $this->line('<fg=bright-blue>📁 Repository:</>       <fg=cyan;options=underscore>https://github.com/devuni-cz/notifier-package</>');
         $this->line('<fg=bright-blue>🌐 Website:</>          <fg=cyan;options=underscore>https://devuni.cz</>');
         $this->line('<fg=bright-blue>🔨 Developed by:</>     <fg=white>Devuni team</>');
-        $this->line('<fg=bright-blue>📅 Version:</>          <fg=white>'. $this->getCurrentVersion() . '</>');
+        $this->line('<fg=bright-blue>📅 Version:</>          <fg=white>'.$this->getCurrentVersion().'</>');
         $this->line('<fg=gray>──────────────────────────────────────────────────────────────────────────────</>');
         $this->newLine();
     }
@@ -147,4 +153,3 @@ class NotifierInstallCommand extends Command
         }
     }
 }
-
