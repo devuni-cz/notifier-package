@@ -51,8 +51,8 @@ describe('NotifierServiceProvider', function () {
         });
 
         it('respects environment variable precedence', function () {
-            // Test that env() calls work properly in config
-            expect(config('notifier.backup_zip_password'))->not->toBeNull();
+            // backup_zip_password defaults to null when no env var is set
+            expect(config('notifier.backup_zip_password'))->toBeNull();
         });
     });
 
@@ -108,7 +108,7 @@ describe('NotifierServiceProvider', function () {
                 $routeUris[] = $route->uri();
             }
 
-            expect($routeUris)->toContain('api/backup');
+            expect($routeUris)->toContain('api/notifier/backup');
         });
 
         it('registers backup route with correct methods', function () {
@@ -116,14 +116,14 @@ describe('NotifierServiceProvider', function () {
             $backupRoute = null;
 
             foreach ($routes as $route) {
-                if ($route->uri() === 'api/backup') {
+                if ($route->uri() === 'api/notifier/backup') {
                     $backupRoute = $route;
                     break;
                 }
             }
 
             expect($backupRoute)->not->toBeNull();
-            expect($backupRoute->methods())->toContain('GET');
+            expect($backupRoute->methods())->toContain('POST');
         });
 
         it('applies throttle middleware to backup route', function () {
@@ -131,7 +131,7 @@ describe('NotifierServiceProvider', function () {
             $backupRoute = null;
 
             foreach ($routes as $route) {
-                if ($route->uri() === 'api/backup') {
+                if ($route->uri() === 'api/notifier/backup') {
                     $backupRoute = $route;
                     break;
                 }

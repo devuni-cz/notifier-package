@@ -53,7 +53,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v6
         with:
-          name: test-results-php${{ matrix.php }}-laravel${{ matrix.laravel }}
+          name: test-results-php${{ matrix.php }}-laravel${{ matrix.laravel == '12.*' && '12' || matrix.laravel }}
           path: build/report.junit.xml
           retention-days: 7
 
