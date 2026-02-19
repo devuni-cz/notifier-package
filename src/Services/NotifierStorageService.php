@@ -48,6 +48,12 @@ class NotifierStorageService
     {
         NotifierLogger::get()->info('➡️ preparing file for sending');
 
+        $backupUrl = config('notifier.backup_url');
+
+        if (! str_starts_with($backupUrl, 'https://')) {
+            throw new \RuntimeException('Backup URL must use HTTPS: '.$backupUrl);
+        }
+
         $fileStream = null;
 
         try {

@@ -252,6 +252,13 @@ class NotifierCheckCommand extends Command
             return;
         }
 
+        if (! str_starts_with($backupUrl, 'https://')) {
+            $this->hasErrors = true;
+            $this->line('   <fg=red>✗</> Backup URL must use HTTPS: <fg=cyan>'.$backupUrl.'</>');
+
+            return;
+        }
+
         try {
             $parsedUrl = parse_url($backupUrl);
             $baseUrl = ($parsedUrl['scheme'] ?? 'https').'://'.($parsedUrl['host'] ?? '');

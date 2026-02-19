@@ -34,7 +34,6 @@ class NotifierDatabaseService
             '--single-transaction',
             '--quick',
             '--user='.$config['username'],
-            '--password='.$config['password'],
             '--port='.$config['port'],
             '--host='.$config['host'],
         ];
@@ -47,6 +46,7 @@ class NotifierDatabaseService
         $command[] = $config['database'];
 
         $process = new Process($command);
+        $process->setEnv(['MYSQL_PWD' => $config['password']]);
         $process->run();
 
         if (! $process->isSuccessful()) {
@@ -64,6 +64,12 @@ class NotifierDatabaseService
     public function sendDatabaseBackup(string $path): void
     {
         NotifierLogger::get()->info('➡️ preparing file for sending');
+
+        $backupUrl = config('notifier.backup_url');
+
+        if (! str_starts_with($backupUrl, 'https://')) {
+            throw new \RuntimeException('Backup URL must use HTTPS: '.$backupUrl);
+        }
 
         $fileStream = null;
 
