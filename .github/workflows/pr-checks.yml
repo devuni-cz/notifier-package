@@ -41,7 +41,7 @@ jobs:
       pull-requests: write
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Label PR based on files
         uses: actions/labeler@v5
