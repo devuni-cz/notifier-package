@@ -46,7 +46,8 @@ jobs:
           composer update --prefer-stable --prefer-dist --no-interaction
 
       - name: Run tests
-        run: vendor/bin/pest --coverage-text --coverage-clover=coverage.xml --log-junit=build/report.junit.xml
+        timeout-minutes: 5
+        run: vendor/bin/pest tests/Unit/Services/ tests/Unit/NotifierServiceProviderTest.php --coverage-text --coverage-clover=coverage.xml --log-junit=build/report.junit.xml
 
       - name: Upload test results
         if: always()

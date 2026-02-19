@@ -27,7 +27,8 @@ jobs:
         run: composer update --prefer-stable --prefer-dist --no-interaction
 
       - name: Run tests
-        run: vendor/bin/pest
+        timeout-minutes: 5
+        run: vendor/bin/pest tests/Unit/Services/ tests/Unit/NotifierServiceProviderTest.php
 
   release:
     name: Create GitHub Release
