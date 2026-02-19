@@ -29,7 +29,7 @@ describe('NotifierDatabaseBackupCommand', function () {
 
             $this->artisan('notifier:database-backup')
                 ->expectsOutput('⚙️  STARTING NEW BACKUP ⚙️')
-                ->expectsOutput('✅ Backup file created successfully at: ' . $backupPath)
+                ->expectsOutput('✅ Backup file created successfully at: '.$backupPath)
                 ->expectsOutput('✅ End of backup')
                 ->assertExitCode(0);
         })->skip('Requires static method mocking');

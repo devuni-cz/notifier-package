@@ -1,4 +1,5 @@
 <?php
+
 namespace Devuni\Notifier\Services;
 
 class NotifierConfigService

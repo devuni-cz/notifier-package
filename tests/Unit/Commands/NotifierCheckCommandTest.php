@@ -3,10 +3,7 @@
 declare(strict_types=1);
 
 use Devuni\Notifier\Commands\NotifierCheckCommand;
-use Devuni\Notifier\Services\NotifierConfigService;
 use Illuminate\Support\Facades\Artisan;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\File;
 
 describe('NotifierCheckCommand', function () {
     describe('command registration', function () {
@@ -18,13 +15,13 @@ describe('NotifierCheckCommand', function () {
         });
 
         it('has correct signature', function () {
-            $command = new NotifierCheckCommand();
+            $command = new NotifierCheckCommand;
 
             expect($command->getName())->toBe('notifier:check');
         });
 
         it('has correct description', function () {
-            $command = new NotifierCheckCommand();
+            $command = new NotifierCheckCommand;
 
             expect($command->getDescription())->toBe('Check if Notifier package is configured correctly');
         });
