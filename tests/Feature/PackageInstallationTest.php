@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-use Devuni\Notifier\NotifierServiceProvider;
 use Devuni\Notifier\Commands\NotifierCheckCommand;
 use Devuni\Notifier\Commands\NotifierDatabaseBackupCommand;
 use Devuni\Notifier\Commands\NotifierInstallCommand;
 use Devuni\Notifier\Commands\NotifierStorageBackupCommand;
+use Devuni\Notifier\NotifierServiceProvider;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Route;
@@ -82,7 +82,7 @@ describe('Package Installation and Configuration', function () {
 
     it('includes helpers file', function () {
         // Test that helpers file is loaded (even if empty)
-        expect(file_exists(__DIR__ . '/../../src/helpers.php'))->toBeTrue();
+        expect(file_exists(__DIR__.'/../../src/helpers.php'))->toBeTrue();
     });
 });
 
