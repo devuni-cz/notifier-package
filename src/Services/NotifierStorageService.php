@@ -57,14 +57,18 @@ class NotifierStorageService
         $fileStream = null;
 
         try {
+            $checksum = hash_file('sha256', $path);
             $fileStream = fopen($path, 'r');
 
             $response = Http::timeout(300)
                 ->retry(3, 1000)
+                ->withHeaders([
+                    'X-Notifier-Token' => config('notifier.backup_code'),
+                    'X-Backup-Checksum' => $checksum,
+                ])
                 ->attach('backup_file', $fileStream, basename($path))
                 ->post(config('notifier.backup_url'), [
                     'backup_type' => 'backup_storage',
-                    'password' => config('notifier.backup_code'),
                 ]);
 
             if ($response->successful()) {
