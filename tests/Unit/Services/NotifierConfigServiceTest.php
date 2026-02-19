@@ -6,7 +6,7 @@ use Devuni\Notifier\Services\NotifierConfigService;
 
 describe('NotifierConfigService', function () {
     beforeEach(function () {
-        $this->service = new NotifierConfigService();
+        $this->service = new NotifierConfigService;
     });
 
     describe('checkEnvironment', function () {

@@ -5,7 +5,6 @@ declare(strict_types=1);
 use Devuni\Notifier\Controllers\NotifierController;
 use Devuni\Notifier\Services\NotifierConfigService;
 use Illuminate\Http\Request;
-use Illuminate\Http\Response;
 use Illuminate\Validation\ValidationException;
 use Mockery;
 
@@ -13,17 +12,17 @@ describe('NotifierController', function () {
     beforeEach(function () {
         // Mock the services
         $this->mockConfigService = Mockery::mock(NotifierConfigService::class);
-        $this->controller = new NotifierController();
+        $this->controller = new NotifierController;
     });
 
     describe('controller structure', function () {
         it('can be instantiated', function () {
-            $controller = new NotifierController();
+            $controller = new NotifierController;
             expect($controller)->toBeInstanceOf(NotifierController::class);
         });
 
         it('has the correct invoke method signature', function () {
-            $controller = new NotifierController();
+            $controller = new NotifierController;
             $reflection = new ReflectionClass($controller);
             $method = $reflection->getMethod('__invoke');
 
@@ -36,16 +35,16 @@ describe('NotifierController', function () {
     describe('__invoke method', function () {
         describe('request validation', function () {
             it('requires param field in request', function () {
-                $request = new Request();
+                $request = new Request;
 
-                expect(fn() => $this->controller->__invoke($request, $this->mockConfigService))
+                expect(fn () => $this->controller->__invoke($request, $this->mockConfigService))
                     ->toThrow(ValidationException::class);
             });
 
             it('validates param field to be one of allowed values', function () {
                 $request = new Request(['param' => 'invalid_param']);
 
-                expect(fn() => $this->controller->__invoke($request, $this->mockConfigService))
+                expect(fn () => $this->controller->__invoke($request, $this->mockConfigService))
                     ->toThrow(ValidationException::class);
             });
         });
@@ -111,7 +110,7 @@ describe('NotifierController', function () {
         });
 
         it('implements proper method injection pattern', function () {
-            $controller = new NotifierController();
+            $controller = new NotifierController;
             expect($controller)->toBeInstanceOf(NotifierController::class);
 
             // Test that the controller accepts the injected service via method

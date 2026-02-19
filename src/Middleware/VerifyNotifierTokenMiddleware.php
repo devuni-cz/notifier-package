@@ -5,10 +5,9 @@ declare(strict_types=1);
 namespace Devuni\Notifier\Middleware;
 
 use Closure;
-use Illuminate\Http\Request;
-use Devuni\Notifier\Support\NotifierLogger;
-use Symfony\Component\HttpFoundation\Response;
 use Devuni\Notifier\Services\NotifierConfigService;
+use Illuminate\Http\Request;
+use Symfony\Component\HttpFoundation\Response;
 
 class VerifyNotifierTokenMiddleware
 {

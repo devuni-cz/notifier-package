@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-use Devuni\Notifier\NotifierServiceProvider;
-use Devuni\Notifier\Services\NotifierConfigService;
-use Devuni\Notifier\Commands\NotifierInstallCommand;
 use Devuni\Notifier\Commands\NotifierDatabaseBackupCommand;
+use Devuni\Notifier\Commands\NotifierInstallCommand;
 use Devuni\Notifier\Commands\NotifierStorageBackupCommand;
 use Devuni\Notifier\Controllers\NotifierController;
+use Devuni\Notifier\NotifierServiceProvider;
+use Devuni\Notifier\Services\NotifierConfigService;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Route;
 
@@ -46,14 +46,14 @@ describe('Notifier Package Basic Integration Tests', function () {
 
     describe('Configuration Service', function () {
         it('can instantiate config service', function () {
-            $service = new NotifierConfigService();
+            $service = new NotifierConfigService;
             expect($service)->toBeInstanceOf(NotifierConfigService::class);
         });
 
         it('detects missing environment variables', function () {
             config(['notifier.backup_code' => '', 'notifier.backup_url' => '', 'notifier.backup_zip_password' => '']);
 
-            $service = new NotifierConfigService();
+            $service = new NotifierConfigService;
             $missing = $service->checkEnvironment();
 
             expect($missing)->not->toBeEmpty();
@@ -66,10 +66,10 @@ describe('Notifier Package Basic Integration Tests', function () {
             config([
                 'notifier.backup_code' => 'test-code',
                 'notifier.backup_url' => 'https://test.com',
-                'notifier.backup_zip_password' => 'password'
+                'notifier.backup_zip_password' => 'password',
             ]);
 
-            $service = new NotifierConfigService();
+            $service = new NotifierConfigService;
             $missing = $service->checkEnvironment();
 
             expect($missing)->toBeEmpty();
@@ -78,17 +78,17 @@ describe('Notifier Package Basic Integration Tests', function () {
 
     describe('Commands', function () {
         it('can instantiate install command', function () {
-            $command = new NotifierInstallCommand();
+            $command = new NotifierInstallCommand;
             expect($command)->toBeInstanceOf(NotifierInstallCommand::class);
         });
 
         it('can instantiate database backup command', function () {
-            $command = new NotifierDatabaseBackupCommand();
+            $command = new NotifierDatabaseBackupCommand;
             expect($command)->toBeInstanceOf(NotifierDatabaseBackupCommand::class);
         });
 
         it('can instantiate storage backup command', function () {
-            $command = new NotifierStorageBackupCommand();
+            $command = new NotifierStorageBackupCommand;
             expect($command)->toBeInstanceOf(NotifierStorageBackupCommand::class);
         });
 
@@ -111,8 +111,8 @@ describe('Notifier Package Basic Integration Tests', function () {
 
     describe('Controller', function () {
         it('can instantiate controller', function () {
-            $configService = new NotifierConfigService();
-            $controller = new NotifierController();
+            $configService = new NotifierConfigService;
+            $controller = new NotifierController;
             expect($controller)->toBeInstanceOf(NotifierController::class);
         });
 
@@ -184,14 +184,14 @@ describe('Notifier Package Basic Integration Tests', function () {
 
     describe('Package Structure', function () {
         it('includes all required files', function () {
-            expect(file_exists(__DIR__ . '/../../src/NotifierServiceProvider.php'))->toBeTrue();
-            expect(file_exists(__DIR__ . '/../../src/helpers.php'))->toBeTrue();
-            expect(file_exists(__DIR__ . '/../../config/notifier.php'))->toBeTrue();
-            expect(file_exists(__DIR__ . '/../../routes/notifier.php'))->toBeTrue();
+            expect(file_exists(__DIR__.'/../../src/NotifierServiceProvider.php'))->toBeTrue();
+            expect(file_exists(__DIR__.'/../../src/helpers.php'))->toBeTrue();
+            expect(file_exists(__DIR__.'/../../config/notifier.php'))->toBeTrue();
+            expect(file_exists(__DIR__.'/../../routes/notifier.php'))->toBeTrue();
         });
 
         it('has proper composer configuration', function () {
-            $composer = json_decode(file_get_contents(__DIR__ . '/../../composer.json'), true);
+            $composer = json_decode(file_get_contents(__DIR__.'/../../composer.json'), true);
             expect($composer['name'])->toBe('devuni/notifier-package');
             expect($composer['extra']['laravel']['providers'])->toContain(NotifierServiceProvider::class);
         });

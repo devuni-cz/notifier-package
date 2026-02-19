@@ -29,7 +29,7 @@ describe('NotifierStorageBackupCommand', function () {
 
             $this->artisan('notifier:storage-backup')
                 ->expectsOutput('⚙️  STARTING NEW BACKUP ⚙️')
-                ->expectsOutput('✅ Backup file created successfully at: ' . $backupPath)
+                ->expectsOutput('✅ Backup file created successfully at: '.$backupPath)
                 ->expectsOutput('✅ End of backup')
                 ->assertExitCode(0);
         })->skip('Requires static method mocking');
@@ -125,14 +125,14 @@ describe('NotifierStorageBackupCommand', function () {
 
     describe('command properties', function () {
         it('has correct signature property', function () {
-            $command = new NotifierStorageBackupCommand();
+            $command = new NotifierStorageBackupCommand;
 
             expect($command)
                 ->toHaveProperty('signature', 'notifier:storage-backup');
         });
 
         it('has correct description property', function () {
-            $command = new NotifierStorageBackupCommand();
+            $command = new NotifierStorageBackupCommand;
 
             expect($command)
                 ->toHaveProperty('description', 'Command for creating a storage backup');
