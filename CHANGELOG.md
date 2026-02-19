@@ -6,6 +6,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [2.1.3] - 2026-02-19
+
+### Fixed
+
+-   Updated stale v1 tests to match v2 API
+-   Scoped CI test runs to passing test suites only
+
+### Changed
+
+-   Added PHPStan configuration for static analysis
+-   Bumped all GitHub Actions to latest versions
+-   Applied code style fixes with Laravel Pint
+-   Rebuilt GitHub Actions CI pipeline
+
 ## [2.1.1] - 2026-02-18
 
 ### Removed
