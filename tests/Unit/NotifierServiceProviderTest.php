@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-use Devuni\Notifier\NotifierServiceProvider;
 use Devuni\Notifier\Commands\NotifierCheckCommand;
 use Devuni\Notifier\Commands\NotifierDatabaseBackupCommand;
 use Devuni\Notifier\Commands\NotifierInstallCommand;
 use Devuni\Notifier\Commands\NotifierStorageBackupCommand;
+use Devuni\Notifier\NotifierServiceProvider;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Route;
 
@@ -145,7 +145,7 @@ describe('NotifierServiceProvider', function () {
     describe('Helpers Registration', function () {
         it('includes helpers file', function () {
             // Test that helpers file exists and is loaded
-            $helpersPath = __DIR__ . '/../../src/helpers.php';
+            $helpersPath = __DIR__.'/../../src/helpers.php';
             expect(file_exists($helpersPath))->toBeTrue();
         });
 
@@ -164,7 +164,7 @@ describe('NotifierServiceProvider', function () {
             $provider->boot();
 
             // Check that config file exists in package
-            $configPath = __DIR__ . '/../../config/notifier.php';
+            $configPath = __DIR__.'/../../config/notifier.php';
             expect(file_exists($configPath))->toBeTrue();
         });
 
@@ -180,7 +180,7 @@ describe('NotifierServiceProvider', function () {
 
         it('loads routes from correct path', function () {
             // Routes should be loaded from package routes directory
-            $routesPath = __DIR__ . '/../../routes/notifier.php';
+            $routesPath = __DIR__.'/../../routes/notifier.php';
             expect(file_exists($routesPath))->toBeTrue();
         });
     });
@@ -203,7 +203,7 @@ describe('NotifierServiceProvider', function () {
 
     describe('Package Auto-Discovery', function () {
         it('is discoverable via composer extra.laravel.providers', function () {
-            $composerJson = json_decode(file_get_contents(__DIR__ . '/../../composer.json'), true);
+            $composerJson = json_decode(file_get_contents(__DIR__.'/../../composer.json'), true);
 
             expect($composerJson['extra']['laravel']['providers'])->toContain(NotifierServiceProvider::class);
         });
