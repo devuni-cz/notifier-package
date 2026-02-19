@@ -1,0 +1,38 @@
+name: Validate Composer
+
+on:
+  push:
+    paths:
+      - 'composer.json'
+      - 'composer.lock'
+    branches: [main, develop]
+  pull_request:
+    paths:
+      - 'composer.json'
+      - 'composer.lock'
+    branches: [main, develop]
+
+jobs:
+  validate:
+    name: Composer Validate
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          coverage: none
+
+      - name: Validate composer.json
+        run: composer validate --strict --no-check-all
+
+      - name: Check for unused dependencies
+        run: |
+          composer update --prefer-stable --prefer-dist --no-interaction
+          composer check-platform-reqs
+
+      - name: Verify lock file is up to date
+        run: composer validate --no-check-all --check-lock

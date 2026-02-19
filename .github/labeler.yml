@@ -1,0 +1,38 @@
+# Labels PRs based on which files are changed
+source:
+  - changed-files:
+      - any-glob-to-any-file: 'src/**/*'
+
+tests:
+  - changed-files:
+      - any-glob-to-any-file: 'tests/**/*'
+
+config:
+  - changed-files:
+      - any-glob-to-any-file: 'config/**/*'
+
+documentation:
+  - changed-files:
+      - any-glob-to-any-file:
+          - '*.md'
+          - 'docs/**/*'
+
+ci:
+  - changed-files:
+      - any-glob-to-any-file:
+          - '.github/workflows/**/*'
+          - '.github/dependabot.yml'
+
+commands:
+  - changed-files:
+      - any-glob-to-any-file: 'src/Commands/**/*'
+
+services:
+  - changed-files:
+      - any-glob-to-any-file: 'src/Services/**/*'
+
+security:
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'src/Middleware/**/*'
+          - 'SECURITY.md'
