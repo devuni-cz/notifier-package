@@ -7,6 +7,7 @@ namespace Devuni\Notifier\Services;
 use Carbon\Carbon;
 use Devuni\Notifier\Services\Zip\ZipManager;
 use Devuni\Notifier\Support\NotifierLogger;
+use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Http;
 use Throwable;
@@ -54,22 +55,13 @@ class NotifierStorageService
             throw new \RuntimeException('Backup URL must use HTTPS: '.$backupUrl);
         }
 
-        $fileStream = null;
-
         try {
             $checksum = hash_file('sha256', $path);
-            $fileStream = fopen($path, 'r');
-
-            $response = Http::timeout(300)
-                ->retry(3, 1000)
-                ->withHeaders([
-                    'X-Notifier-Token' => config('notifier.backup_code'),
-                    'X-Backup-Checksum' => $checksum,
-                ])
-                ->attach('backup_file', $fileStream, basename($path))
-                ->post(config('notifier.backup_url'), [
-                    'backup_type' => 'backup_storage',
-                ]);
+            $response = $this->uploadWithRetry(
+                path: $path,
+                checksum: $checksum,
+                backupType: 'backup_storage'
+            );
 
             if ($response->successful()) {
                 NotifierLogger::get()->info('➡️ file was sent');
@@ -87,12 +79,50 @@ class NotifierStorageService
             ]);
             NotifierLogger::get()->emergency('❌ END OF SESSION ❌');
         } finally {
-            if (is_resource($fileStream)) {
-                fclose($fileStream);
-            }
-
             File::delete($path);
             NotifierLogger::get()->info('➡️ backup file cleaned up');
         }
+    }
+
+    /**
+     * Upload a file with manual retry logic.
+     *
+     * Re-opens the file stream on each attempt to avoid "resource (closed)" errors
+     * that occur when Laravel's Http::retry() reuses a consumed stream.
+     */
+    private function uploadWithRetry(string $path, string $checksum, string $backupType, int $maxAttempts = 3, int $retryDelayMs = 1000): Response
+    {
+        $lastException = null;
+
+        for ($attempt = 1; $attempt <= $maxAttempts; $attempt++) {
+            $fileStream = fopen($path, 'r');
+
+            try {
+                /** @var Response $response */
+                $response = Http::timeout(300)
+                    ->withHeaders([
+                        'X-Notifier-Token' => config('notifier.backup_code'),
+                        'X-Backup-Checksum' => $checksum,
+                    ])
+                    ->attach('backup_file', $fileStream, basename($path))
+                    ->post(config('notifier.backup_url'), [
+                        'backup_type' => $backupType,
+                    ]);
+
+                return $response;
+            } catch (Throwable $e) {
+                $lastException = $e;
+
+                if ($attempt < $maxAttempts) {
+                    usleep($retryDelayMs * 1000);
+                }
+            } finally {
+                if (is_resource($fileStream)) {
+                    fclose($fileStream);
+                }
+            }
+        }
+
+        throw $lastException;
     }
 }
