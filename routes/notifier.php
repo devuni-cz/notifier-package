@@ -9,5 +9,5 @@ $prefix = config('notifier.route_prefix', 'api/notifier');
 Route::post("{$prefix}/backup", NotifierSendBackupController::class)
     ->middleware([
         VerifyNotifierTokenMiddleware::class,
-        'throttle:5,60',
+        'throttle:10,60',
     ]);
