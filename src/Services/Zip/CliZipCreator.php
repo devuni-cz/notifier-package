@@ -21,23 +21,31 @@ class CliZipCreator implements ZipCreator
             File::delete($zipPath);
         }
 
+        // Handle single file (e.g. SQL dump) vs directory
+        $isFile = is_file($sourcePath);
+        $cwd = $isFile ? dirname($sourcePath) : $sourcePath;
+        $target = $isFile ? basename($sourcePath) : '.';
+
         $command = [
             '7z', 'a',
             '-tzip',
             '-mem=AES256',
             '-p'.$password,
-            '-r',
             '-bso0', // suppress standard output
             '-bsp0', // suppress progress
             $zipPath,
-            '.',
+            $target,
         ];
 
-        foreach ($excludedFiles as $excluded) {
-            $command[] = '-xr!'.ltrim($excluded, '/');
+        if (! $isFile) {
+            array_splice($command, 6, 0, ['-r']);
+
+            foreach ($excludedFiles as $excluded) {
+                $command[] = '-xr!'.ltrim($excluded, '/');
+            }
         }
 
-        $process = new Process($command, $sourcePath);
+        $process = new Process($command, $cwd);
         $process->setTimeout(600);
         $process->run();
 

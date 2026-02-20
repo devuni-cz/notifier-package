@@ -9,7 +9,7 @@ interface ZipCreator
     /**
      * Create a password-protected ZIP archive from a source directory.
      *
-     * @param  string  $sourcePath  Absolute path to the directory to archive.
+     * @param  string  $sourcePath  Absolute path to the file or directory to archive.
      * @param  string  $zipPath  Absolute path for the output ZIP file.
      * @param  string  $password  Password for encryption.
      * @param  array<string>  $excludedFiles  Relative paths to exclude.

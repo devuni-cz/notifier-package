@@ -26,6 +26,18 @@ class PhpZipCreator implements ZipCreator
 
         $zip->setPassword($password);
 
+        // Handle single file (e.g. SQL dump) vs directory
+        if (is_file($sourcePath)) {
+            $entryName = basename($sourcePath);
+            NotifierLogger::get()->info('➡️ adding file: '.$sourcePath);
+            $zip->addFile($sourcePath, $entryName);
+            $zip->setEncryptionName($entryName, ZipArchive::EM_AES_256);
+            $zip->close();
+            chmod($zipPath, 0600);
+
+            return 1;
+        }
+
         $files = new RecursiveIteratorIterator(
             new RecursiveDirectoryIterator($sourcePath, RecursiveDirectoryIterator::SKIP_DOTS),
             RecursiveIteratorIterator::SELF_FIRST
