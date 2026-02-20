@@ -47,6 +47,7 @@ class NotifierDatabaseService
         $command[] = $config['database'];
 
         $process = new Process($command);
+        $process->setTimeout(600);
         $process->setEnv(['MYSQL_PWD' => $config['password']]);
         $process->run();
 
