@@ -26,11 +26,22 @@ class NotifierStorageService
 
         NotifierLogger::get()->info('➡️ creating backup file');
 
-        $source = realpath(storage_path('app/public'));
+        $sourcePath = storage_path('app/public');
+
+        if (! File::isDirectory($sourcePath)) {
+            throw new \RuntimeException(
+                'Storage source directory does not exist: '.$sourcePath
+                .'. Make sure the storage directory is properly linked (php artisan storage:link)'
+                .' and your deployment creates the correct symlinks for the shared storage folder.'
+            );
+        }
+
+        $source = realpath($sourcePath);
 
         if ($source === false) {
             throw new \RuntimeException(
-                'Storage source directory does not exist: '.storage_path('app/public')
+                'Storage source directory could not be resolved: '.$sourcePath
+                .'. This may indicate a broken symlink in your deployment setup.'
             );
         }
 

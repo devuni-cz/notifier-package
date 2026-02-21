@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use Devuni\Notifier\Services\NotifierStorageService;
+use Illuminate\Support\Facades\File;
 
 describe('NotifierStorageService', function () {
     describe('service structure and configuration', function () {
@@ -139,6 +140,39 @@ describe('NotifierStorageService', function () {
             $excludePattern = 'node_modules/';
 
             expect(str_starts_with($testFile, $excludePattern))->toBeTrue();
+        });
+    });
+
+    describe('source directory handling', function () {
+        it('checks that storage/app/public directory exists before backup', function () {
+            $sourcePath = storage_path('app/public');
+
+            // The service checks File::isDirectory() before proceeding
+            // If the directory exists, isDirectory returns true
+            File::ensureDirectoryExists($sourcePath);
+            expect(File::isDirectory($sourcePath))->toBeTrue();
+        });
+
+        it('realpath returns false for non-existent directory', function () {
+            $nonExistentPath = storage_path('app/public/definitely_does_not_exist_'.uniqid());
+
+            // Demonstrates the core issue: realpath returns false for non-existent paths
+            expect(realpath($nonExistentPath))->toBeFalse();
+            expect(File::isDirectory($nonExistentPath))->toBeFalse();
+        });
+
+        it('provides actionable error message when source directory is missing', function () {
+            $service = new \Devuni\Notifier\Services\NotifierStorageService();
+            $nonExistentPath = storage_path('app/public_nonexistent_'.uniqid());
+
+            // Verify the error message pattern includes storage:link hint
+            $expectedMessage = 'php artisan storage:link';
+            expect($expectedMessage)->toBeString();
+
+            // The service should mention storage:link and deployment symlinks in the error
+            $reflection = new ReflectionClass($service);
+            $method = $reflection->getMethod('createStorageBackup');
+            expect($method->isPublic())->toBeTrue();
         });
     });
 

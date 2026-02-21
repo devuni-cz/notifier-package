@@ -6,6 +6,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [2.2.4] - 2026-02-22
+
+### Fixed
+
+-   Improved error handling when `storage/app/public` directory is missing during storage backup
+-   Replaced silent `File::ensureDirectoryExists()` with explicit `File::isDirectory()` check to avoid masking deployment issues
+-   Added actionable error messages suggesting `php artisan storage:link` and deployment symlink configuration
+-   Added separate error for broken symlinks where `realpath()` fails on an existing directory
+
 ## [2.2.3] - 2026-02-20
 
 ### Fixed
@@ -270,7 +279,8 @@ NOTIFIER_LOGGING_CHANNEL=backup
 -   GitHub Actions CI/CD
 -   Documentation and examples
 
-[Unreleased]: https://github.com/devuni-cz/notifier-package/compare/v2.2.3...HEAD
+[Unreleased]: https://github.com/devuni-cz/notifier-package/compare/v2.2.4...HEAD
+[2.2.4]: https://github.com/devuni-cz/notifier-package/compare/v2.2.3...v2.2.4
 [2.2.3]: https://github.com/devuni-cz/notifier-package/compare/v2.2.2...v2.2.3
 [2.1.1]: https://github.com/devuni-cz/notifier-package/compare/v2.1.0...v2.1.1
 [2.1.0]:https://github.com/devuni-cz/notifier-package/compare/v2.0.0...v2.1.0
