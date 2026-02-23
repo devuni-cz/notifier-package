@@ -162,7 +162,7 @@ describe('NotifierStorageService', function () {
         });
 
         it('provides actionable error message when source directory is missing', function () {
-            $service = new \Devuni\Notifier\Services\NotifierStorageService();
+            $service = new \Devuni\Notifier\Services\NotifierStorageService;
             $nonExistentPath = storage_path('app/public_nonexistent_'.uniqid());
 
             // Verify the error message pattern includes storage:link hint
