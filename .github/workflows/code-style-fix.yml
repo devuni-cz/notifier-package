@@ -31,7 +31,7 @@ jobs:
         run: vendor/bin/pint
 
       - name: Commit changes
-        uses: stefanzweifel/git-auto-commit-action@v5
+        uses: stefanzweifel/git-auto-commit-action@v7
         with:
           commit_message: 'style: auto-fix code style with Pint'
           commit_author: 'GitHub Actions <actions@github.com>'
