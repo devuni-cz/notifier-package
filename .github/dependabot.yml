@@ -63,3 +63,13 @@ updates:
       actions:
           patterns:
               - 'actions/*'
+      setup:
+          patterns:
+              - 'shivammathur/setup-php'
+      codecov:
+          patterns:
+              - 'codecov/*'
+      release:
+          patterns:
+              - 'softprops/action-gh-release'
+              - 'stefanzweifel/git-auto-commit-action'
