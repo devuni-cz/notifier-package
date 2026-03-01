@@ -119,7 +119,7 @@ describe('Notifier Package Basic Integration Tests', function () {
         });
         it('can instantiate controller', function () {
             $configService = new NotifierConfigService;
-            $controller = new NotifierSendBackupController($configService, new \Devuni\Notifier\Services\NotifierDatabaseService, new \Devuni\Notifier\Services\NotifierStorageService);
+            $controller = new NotifierSendBackupController($configService, new Devuni\Notifier\Services\NotifierDatabaseService, new Devuni\Notifier\Services\NotifierStorageService);
             expect($controller)->toBeInstanceOf(NotifierSendBackupController::class);
         })->skip('Controller requires service injection — see NotifierControllerTest');
 

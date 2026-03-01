@@ -72,4 +72,3 @@ describe('NotifierDatabaseBackupCommand', function () {
         })->skip('Requires output assertion testing');
     });
 });
-
