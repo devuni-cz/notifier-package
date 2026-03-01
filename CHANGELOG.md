@@ -6,7 +6,23 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
-## [2.2.4] - 2026-02-22
+## [2.2.5] - 2026-03-01
+
+### Fixed
+
+-   Fixed all unit test failures caused by Mockery being used on `final` classes — replaced with `Config::set()` approach
+-   Fixed `NotifierControllerTest` referencing non-existent `NotifierController` class — rewritten to test `NotifierSendBackupController` via HTTP
+-   Fixed CI test hang caused by real outbound HTTP request to `httpbin.org` in `NotifierCheckCommandTest` — added `Http::fake()`
+-   Fixed `CACHE_DRIVER=array` → `CACHE_STORE=array` in `phpunit.xml` (Laravel 12 renamed the env var, causing throttle middleware to crash with missing `cache` table)
+-   Fixed stale route/method/parameter assertions across feature tests after API redesign (`GET /api/backup` → `POST /api/notifier/backup`)
+-   Fixed Pint style issues: `fully_qualified_strict_types` and `single_blank_line_at_eof`
+
+### Changed
+
+-   Enhanced Dependabot config with grouped updates for `laravel`, `orchestra`, `pestphp`, `phpunit`, `phpstan/larastan`, `symfony`, `guzzle`, `actions`, `codecov`, and `release` tools
+-   Added weekly scheduled CI run (every Monday 08:00 UTC) to catch upstream regressions
+
+
 
 ### Fixed
 
