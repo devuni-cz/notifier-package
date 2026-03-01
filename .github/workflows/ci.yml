@@ -37,7 +37,7 @@ jobs:
         uses: actions/cache@v5
         with:
           path: vendor
-          key: composer-${{ matrix.php }}-${{ matrix.laravel }}-${{ hashFiles('composer.json') }}
+          key: composer-${{ matrix.php }}-${{ matrix.laravel }}-${{ hashFiles('composer.lock') }}
           restore-keys: composer-${{ matrix.php }}-${{ matrix.laravel }}-
 
       - name: Install dependencies
@@ -47,7 +47,7 @@ jobs:
 
       - name: Run tests
         timeout-minutes: 5
-        run: vendor/bin/pest tests/Unit/Services/ tests/Unit/NotifierServiceProviderTest.php --coverage-text --coverage-clover=coverage.xml --log-junit=build/report.junit.xml
+        run: vendor/bin/pest --log-junit=build/report.junit.xml ${{ matrix.coverage && '--coverage-text --coverage-clover=coverage.xml' || '--no-coverage' }}
 
       - name: Upload test results
         if: always()
@@ -82,7 +82,7 @@ jobs:
         uses: actions/cache@v5
         with:
           path: vendor
-          key: composer-phpstan-${{ hashFiles('composer.json') }}
+          key: composer-phpstan-${{ hashFiles('composer.lock') }}
           restore-keys: composer-phpstan-
 
       - name: Install dependencies
@@ -115,7 +115,7 @@ jobs:
         uses: actions/cache@v5
         with:
           path: vendor
-          key: composer-pint-${{ hashFiles('composer.json') }}
+          key: composer-pint-${{ hashFiles('composer.lock') }}
           restore-keys: composer-pint-
 
       - name: Install dependencies

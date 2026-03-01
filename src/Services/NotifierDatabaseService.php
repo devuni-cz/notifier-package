@@ -9,10 +9,11 @@ use Devuni\Notifier\Services\Zip\ZipManager;
 use Devuni\Notifier\Support\NotifierLogger;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Http;
+use RuntimeException;
 use Symfony\Component\Process\Process;
 use Throwable;
 
-class NotifierDatabaseService
+final class NotifierDatabaseService
 {
     public function createDatabaseBackup(): string
     {
@@ -57,7 +58,7 @@ class NotifierDatabaseService
                 'error' => $process->getErrorOutput(),
             ]);
 
-            throw new \RuntimeException('Database backup failed: '.$process->getErrorOutput());
+            throw new RuntimeException('Database backup failed: '.$process->getErrorOutput());
         }
 
         // Encrypt the SQL dump into a password-protected ZIP
@@ -85,7 +86,7 @@ class NotifierDatabaseService
         $backupUrl = config('notifier.backup_url');
 
         if (! str_starts_with($backupUrl, 'https://')) {
-            throw new \RuntimeException('Backup URL must use HTTPS: '.$backupUrl);
+            throw new RuntimeException('Backup URL must use HTTPS: '.$backupUrl);
         }
 
         try {

@@ -12,8 +12,13 @@ use RecursiveIteratorIterator;
 use RuntimeException;
 use ZipArchive;
 
-class PhpZipCreator implements ZipCreator
+final class PhpZipCreator implements ZipCreator
 {
+    public static function isAvailable(): bool
+    {
+        return extension_loaded('zip');
+    }
+
     public function create(string $sourcePath, string $zipPath, string $password, array $excludedFiles = []): int
     {
         NotifierLogger::get()->info('➡️ using PHP ZipArchive fallback for ZIP creation');
@@ -58,7 +63,7 @@ class PhpZipCreator implements ZipCreator
                 continue;
             }
 
-            $relativePath = substr($filePath, strlen($sourcePath) + 1);
+            $relativePath = mb_substr($filePath, mb_strlen($sourcePath) + 1);
 
             if (empty($relativePath)) {
                 NotifierLogger::get()->warning('➡️ skipping file with empty relative path: '.$filePath);
@@ -91,11 +96,6 @@ class PhpZipCreator implements ZipCreator
         chmod($zipPath, 0600);
 
         return $fileCount;
-    }
-
-    public static function isAvailable(): bool
-    {
-        return extension_loaded('zip');
     }
 
     private function isExcluded(string $relativePath, array $excludedFiles): bool

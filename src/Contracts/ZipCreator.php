@@ -4,8 +4,15 @@ declare(strict_types=1);
 
 namespace Devuni\Notifier\Contracts;
 
+use RuntimeException;
+
 interface ZipCreator
 {
+    /**
+     * Check if this strategy is available on the current system.
+     */
+    public static function isAvailable(): bool;
+
     /**
      * Create a password-protected ZIP archive from a source directory.
      *
@@ -15,12 +22,7 @@ interface ZipCreator
      * @param  array<string>  $excludedFiles  Relative paths to exclude.
      * @return int Number of files added to the archive.
      *
-     * @throws \RuntimeException When archive creation fails.
+     * @throws RuntimeException When archive creation fails.
      */
     public function create(string $sourcePath, string $zipPath, string $password, array $excludedFiles = []): int;
-
-    /**
-     * Check if this strategy is available on the current system.
-     */
-    public static function isAvailable(): bool;
 }

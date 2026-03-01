@@ -1,12 +1,15 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Devuni\Notifier\Commands;
 
 use Composer\InstalledVersions;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\File;
+use OutOfBoundsException;
 
-class NotifierInstallCommand extends Command
+final class NotifierInstallCommand extends Command
 {
     protected $signature = 'notifier:install {--force : Overwrites existing environment variables}';
 
@@ -19,13 +22,13 @@ class NotifierInstallCommand extends Command
             $this->line('<bg=red;fg=white;options=bold> ERROR </> The Notifier configuration already exists. Use --force to overwrite.');
             $this->newLine();
 
-            return static::FAILURE;
+            return self::FAILURE;
         }
 
         $this->displayBanner();
 
-        if ($this->ensureEnvFileExists() === static::FAILURE) {
-            return static::FAILURE;
+        if ($this->ensureEnvFileExists() === self::FAILURE) {
+            return self::FAILURE;
         }
 
         $this->info('🔧 Please provide the required environment values:');
@@ -43,7 +46,7 @@ class NotifierInstallCommand extends Command
 
         $this->line('<fg=white;bg=green;options=bold> DONE </> <fg=white>Notifier environment configuration was saved successfully!</>');
 
-        return static::SUCCESS;
+        return self::SUCCESS;
     }
 
     private function ensureEnvFileExists(): int
@@ -64,11 +67,11 @@ class NotifierInstallCommand extends Command
                 $this->line('<bg=red;fg=white;options=bold> ERROR </> <fg=white>Installation aborted! .env file is required.</>');
                 $this->newLine();
 
-                return static::FAILURE;
+                return self::FAILURE;
             }
         }
 
-        return static::SUCCESS;
+        return self::SUCCESS;
     }
 
     private function askRequired(string $question): string
@@ -112,7 +115,7 @@ class NotifierInstallCommand extends Command
         $requiredKeys = ['BACKUP_CODE', 'BACKUP_URL', 'BACKUP_ZIP_PASSWORD'];
         $alreadySet = collect($requiredKeys)->every(function ($key) use ($envContent) {
             if (preg_match("/^{$key}=(.*)$/m", $envContent, $matches)) {
-                $value = trim($matches[1], '"');
+                $value = mb_trim($matches[1], '"');
 
                 return $value !== '';
             }
@@ -148,7 +151,7 @@ class NotifierInstallCommand extends Command
     {
         try {
             return InstalledVersions::getPrettyVersion('devuni/notifier-package') ?? 'custom';
-        } catch (\OutOfBoundsException $e) {
+        } catch (OutOfBoundsException $e) {
             return 'unknown';
         }
     }

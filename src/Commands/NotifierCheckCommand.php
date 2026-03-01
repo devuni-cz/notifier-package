@@ -14,7 +14,7 @@ use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Http;
 use Throwable;
 
-class NotifierCheckCommand extends Command
+final class NotifierCheckCommand extends Command
 {
     protected $signature = 'notifier:check';
 
@@ -40,13 +40,13 @@ class NotifierCheckCommand extends Command
             $this->line('<bg=red;fg=white;options=bold> RESULT </> <fg=red>Some checks failed. Please fix the issues above.</>');
             $this->newLine();
 
-            return static::FAILURE;
+            return self::FAILURE;
         }
 
         $this->line('<bg=green;fg=white;options=bold> RESULT </> <fg=green>All checks passed! Notifier package is ready to use.</>');
         $this->newLine();
 
-        return static::SUCCESS;
+        return self::SUCCESS;
     }
 
     /**
@@ -107,12 +107,12 @@ class NotifierCheckCommand extends Command
             return '<fg=red>(empty)</>';
         }
 
-        $length = strlen($value);
+        $length = mb_strlen($value);
         if ($length <= 6) {
             return str_repeat('*', $length);
         }
 
-        return substr($value, 0, 3).str_repeat('*', $length - 6).substr($value, -3);
+        return mb_substr($value, 0, 3).str_repeat('*', $length - 6).mb_substr($value, -3);
     }
 
     /**
@@ -171,11 +171,11 @@ class NotifierCheckCommand extends Command
 
         $result = shell_exec('which mysqldump 2>/dev/null') ?? shell_exec('where mysqldump 2>nul');
 
-        if (! empty(trim($result ?? ''))) {
+        if (! empty(mb_trim($result ?? ''))) {
             $version = shell_exec('mysqldump --version 2>&1');
             $this->line('   <fg=green>✓</> mysqldump is available');
             if ($version) {
-                $this->line('   <fg=gray>'.trim($version).'</>');
+                $this->line('   <fg=gray>'.mb_trim($version).'</>');
             }
         } else {
             $this->hasErrors = true;

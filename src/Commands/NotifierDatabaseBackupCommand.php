@@ -9,7 +9,7 @@ use Devuni\Notifier\Services\NotifierConfigService;
 use Devuni\Notifier\Services\NotifierDatabaseService;
 use Illuminate\Console\Command;
 
-class NotifierDatabaseBackupCommand extends Command
+final class NotifierDatabaseBackupCommand extends Command
 {
     use ChecksNotifierEnvironment;
 
@@ -19,8 +19,8 @@ class NotifierDatabaseBackupCommand extends Command
 
     public function handle(NotifierConfigService $configService, NotifierDatabaseService $databaseService): int
     {
-        if ($this->checkMissingVariables($configService) === static::FAILURE) {
-            return static::FAILURE;
+        if ($this->checkMissingVariables($configService) === self::FAILURE) {
+            return self::FAILURE;
         }
 
         $this->line('⚙️  STARTING NEW BACKUP ⚙️');
@@ -33,6 +33,6 @@ class NotifierDatabaseBackupCommand extends Command
         $this->newLine();
         $this->line('✅ End of backup');
 
-        return static::SUCCESS;
+        return self::SUCCESS;
     }
 }

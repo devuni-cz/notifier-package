@@ -13,7 +13,7 @@ use Devuni\Notifier\Services\NotifierDatabaseService;
 use Devuni\Notifier\Services\NotifierStorageService;
 use Illuminate\Support\ServiceProvider;
 
-class NotifierServiceProvider extends ServiceProvider
+final class NotifierServiceProvider extends ServiceProvider
 {
     public static function basePath(string $path): string
     {
@@ -44,12 +44,8 @@ class NotifierServiceProvider extends ServiceProvider
             ]);
         }
 
-        $this->publishes([
-            __DIR__.'/../config/notifier.php' => config_path('notifier.php'),
-        ], 'config');
-
         if (config('notifier.routes_enabled', true)) {
-            $this->loadRoutesFrom(__DIR__.'/../routes/web.php');
+            $this->loadRoutesFrom(self::basePath('/routes/web.php'));
         }
     }
 }

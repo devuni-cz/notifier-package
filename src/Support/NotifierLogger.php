@@ -7,7 +7,7 @@ namespace Devuni\Notifier\Support;
 use Illuminate\Support\Facades\Log;
 use Psr\Log\LoggerInterface;
 
-class NotifierLogger
+final class NotifierLogger
 {
     public static function get(): LoggerInterface
     {

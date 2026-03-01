@@ -10,7 +10,7 @@ use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Validation\Rule;
 
-class BackupRequest extends FormRequest
+final class BackupRequest extends FormRequest
 {
     public function authorize(): bool
     {

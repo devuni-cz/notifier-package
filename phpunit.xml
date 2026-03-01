@@ -36,7 +36,6 @@
         <env name="SESSION_DRIVER" value="array"/>
         <env name="NOTIFIER_BACKUP_CODE" value=""/>
         <env name="NOTIFIER_URL" value=""/>
-        <env name="NOTIFIER_BACKUP_PASSWORD" value=""/>
         <env name="NOTIFIER_LOGGING_CHANNEL" value="single"/>
         <env name="NOTIFIER_ROUTES_ENABLED" value="true"/>
     </php>

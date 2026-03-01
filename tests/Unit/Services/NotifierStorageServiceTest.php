@@ -113,7 +113,7 @@ describe('NotifierStorageService', function () {
         it('works with valid file paths', function () {
             $validPath = '/tmp/test-backup.zip';
             expect(is_string($validPath))->toBeTrue();
-            expect(strlen($validPath))->toBeGreaterThan(0);
+            expect(mb_strlen($validPath))->toBeGreaterThan(0);
         });
 
         it('generates unique filenames by date', function () {
@@ -162,7 +162,7 @@ describe('NotifierStorageService', function () {
         });
 
         it('provides actionable error message when source directory is missing', function () {
-            $service = new \Devuni\Notifier\Services\NotifierStorageService();
+            $service = new NotifierStorageService();
             $nonExistentPath = storage_path('app/public_nonexistent_'.uniqid());
 
             // Verify the error message pattern includes storage:link hint

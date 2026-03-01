@@ -28,7 +28,7 @@ jobs:
 
       - name: Run tests
         timeout-minutes: 5
-        run: vendor/bin/pest tests/Unit/Services/ tests/Unit/NotifierServiceProviderTest.php
+        run: vendor/bin/pest --no-coverage
 
   release:
     name: Create GitHub Release

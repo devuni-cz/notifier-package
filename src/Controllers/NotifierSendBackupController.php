@@ -12,7 +12,7 @@ use Devuni\Notifier\Support\NotifierLogger;
 use Illuminate\Http\JsonResponse;
 use Throwable;
 
-class NotifierSendBackupController
+final class NotifierSendBackupController
 {
     public function __construct(
         private readonly NotifierDatabaseService $databaseService,

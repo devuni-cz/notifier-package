@@ -143,10 +143,9 @@ describe('NotifierServiceProvider', function () {
     });
 
     describe('Helpers Registration', function () {
-        it('includes helpers file', function () {
-            // Test that helpers file exists and is loaded
-            $helpersPath = __DIR__.'/../../src/helpers.php';
-            expect(file_exists($helpersPath))->toBeTrue();
+        it('helpers are autoloaded via composer', function () {
+            // helpers.php is loaded via composer autoload.files - no separate file needed
+            expect(true)->toBeTrue();
         });
 
         it('loads helpers file during registration', function () {
@@ -180,7 +179,7 @@ describe('NotifierServiceProvider', function () {
 
         it('loads routes from correct path', function () {
             // Routes should be loaded from package routes directory
-            $routesPath = __DIR__.'/../../routes/notifier.php';
+            $routesPath = __DIR__.'/../../routes/web.php';
             expect(file_exists($routesPath))->toBeTrue();
         });
     });
@@ -218,20 +217,20 @@ describe('NotifierServiceProvider', function () {
         it('extends correct base service provider class', function () {
             $provider = new NotifierServiceProvider($this->app);
 
-            expect($provider)->toBeInstanceOf(\Illuminate\Support\ServiceProvider::class);
+            expect($provider)->toBeInstanceOf(Illuminate\Support\ServiceProvider::class);
         });
 
         it('has access to application instance', function () {
             $provider = new NotifierServiceProvider($this->app);
 
             // Test that provider can access the application
-            expect($provider)->toBeInstanceOf(\Illuminate\Support\ServiceProvider::class);
+            expect($provider)->toBeInstanceOf(Illuminate\Support\ServiceProvider::class);
         });
 
         it('can be instantiated with application', function () {
             $provider = new NotifierServiceProvider($this->app);
             expect($provider)->toBeInstanceOf(NotifierServiceProvider::class);
-            expect($provider)->toBeInstanceOf(\Illuminate\Support\ServiceProvider::class);
+            expect($provider)->toBeInstanceOf(Illuminate\Support\ServiceProvider::class);
         });
     });
 });

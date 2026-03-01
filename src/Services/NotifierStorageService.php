@@ -10,9 +10,10 @@ use Devuni\Notifier\Support\NotifierLogger;
 use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Http;
+use RuntimeException;
 use Throwable;
 
-class NotifierStorageService
+final class NotifierStorageService
 {
     public function createStorageBackup(): string
     {
@@ -29,7 +30,7 @@ class NotifierStorageService
         $sourcePath = storage_path('app/public');
 
         if (! File::isDirectory($sourcePath)) {
-            throw new \RuntimeException(
+            throw new RuntimeException(
                 'Storage source directory does not exist: '.$sourcePath
                 .'. Make sure the storage directory is properly linked (php artisan storage:link)'
                 .' and your deployment creates the correct symlinks for the shared storage folder.'
@@ -39,7 +40,7 @@ class NotifierStorageService
         $source = realpath($sourcePath);
 
         if ($source === false) {
-            throw new \RuntimeException(
+            throw new RuntimeException(
                 'Storage source directory could not be resolved: '.$sourcePath
                 .'. This may indicate a broken symlink in your deployment setup.'
             );
@@ -63,7 +64,7 @@ class NotifierStorageService
         $backupUrl = config('notifier.backup_url');
 
         if (! str_starts_with($backupUrl, 'https://')) {
-            throw new \RuntimeException('Backup URL must use HTTPS: '.$backupUrl);
+            throw new RuntimeException('Backup URL must use HTTPS: '.$backupUrl);
         }
 
         try {

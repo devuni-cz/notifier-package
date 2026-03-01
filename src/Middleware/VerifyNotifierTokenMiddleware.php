@@ -9,7 +9,7 @@ use Devuni\Notifier\Services\NotifierConfigService;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 
-class VerifyNotifierTokenMiddleware
+final class VerifyNotifierTokenMiddleware
 {
     public function __construct(
         private readonly NotifierConfigService $configService

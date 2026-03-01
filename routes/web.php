@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 use Devuni\Notifier\Controllers\NotifierSendBackupController;
 use Devuni\Notifier\Middleware\VerifyNotifierTokenMiddleware;
 use Illuminate\Support\Facades\Route;

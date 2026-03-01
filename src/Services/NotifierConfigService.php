@@ -1,8 +1,10 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Devuni\Notifier\Services;
 
-class NotifierConfigService
+final class NotifierConfigService
 {
     public function checkEnvironment(): array
     {

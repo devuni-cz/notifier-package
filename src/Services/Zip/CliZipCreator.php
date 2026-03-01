@@ -10,8 +10,16 @@ use Illuminate\Support\Facades\File;
 use RuntimeException;
 use Symfony\Component\Process\Process;
 
-class CliZipCreator implements ZipCreator
+final class CliZipCreator implements ZipCreator
 {
+    public static function isAvailable(): bool
+    {
+        $process = new Process(['7z', '--help']);
+        $process->run();
+
+        return $process->isSuccessful();
+    }
+
     public function create(string $sourcePath, string $zipPath, string $password, array $excludedFiles = []): int
     {
         NotifierLogger::get()->info('➡️ using CLI 7z strategy for ZIP creation');
@@ -41,7 +49,7 @@ class CliZipCreator implements ZipCreator
             array_splice($command, 6, 0, ['-r']);
 
             foreach ($excludedFiles as $excluded) {
-                $command[] = '-xr!'.ltrim($excluded, '/');
+                $command[] = '-xr!'.mb_ltrim($excluded, '/');
             }
         }
 
@@ -61,14 +69,6 @@ class CliZipCreator implements ZipCreator
 
         // Count archived files via 7z list
         return $this->countFiles($zipPath, $password);
-    }
-
-    public static function isAvailable(): bool
-    {
-        $process = new Process(['7z', '--help']);
-        $process->run();
-
-        return $process->isSuccessful();
     }
 
     private function countFiles(string $zipPath, string $password): int
