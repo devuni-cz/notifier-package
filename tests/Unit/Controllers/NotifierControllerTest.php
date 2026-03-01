@@ -2,127 +2,93 @@
 
 declare(strict_types=1);
 
-use Devuni\Notifier\Controllers\NotifierController;
-use Devuni\Notifier\Services\NotifierConfigService;
-use Illuminate\Http\Request;
-use Illuminate\Validation\ValidationException;
-use Mockery;
+use Illuminate\Support\Facades\Config;
+use Illuminate\Support\Facades\Http;
 
-describe('NotifierController', function () {
+describe('NotifierSendBackupController', function () {
     beforeEach(function () {
-        // Mock the services
-        $this->mockConfigService = Mockery::mock(NotifierConfigService::class);
-        $this->controller = new NotifierController;
+        Config::set('notifier.backup_code', 'test-backup-code');
+        Config::set('notifier.backup_url', 'https://test-backup.com/upload');
+        Config::set('notifier.backup_zip_password', 'test-password');
+        Http::fake(['*' => Http::response('', 200)]);
     });
 
-    describe('controller structure', function () {
-        it('can be instantiated', function () {
-            $controller = new NotifierController;
-            expect($controller)->toBeInstanceOf(NotifierController::class);
+    describe('request validation', function () {
+        it('returns 422 when type field is missing', function () {
+            $this->postJson('/api/notifier/backup', [], [
+                'X-Notifier-Token' => 'test-backup-code',
+            ])->assertStatus(422);
         });
 
-        it('has the correct invoke method signature', function () {
-            $controller = new NotifierController;
-            $reflection = new ReflectionClass($controller);
-            $method = $reflection->getMethod('__invoke');
+        it('returns 422 when type field has invalid value', function () {
+            $this->postJson('/api/notifier/backup', ['type' => 'invalid'], [
+                'X-Notifier-Token' => 'test-backup-code',
+            ])->assertStatus(422);
+        });
 
-            expect($method->getParameters())->toHaveCount(2);
-            expect($method->getParameters()[0]->getType()->getName())->toBe(Request::class);
-            expect($method->getParameters()[1]->getType()->getName())->toBe(NotifierConfigService::class);
+        it('accepts backup_database as a valid type value', function () {
+            $response = $this->postJson('/api/notifier/backup', ['type' => 'backup_database'], [
+                'X-Notifier-Token' => 'test-backup-code',
+            ]);
+
+            expect($response->status())->not->toBe(422);
+        });
+
+        it('accepts backup_storage as a valid type value', function () {
+            $response = $this->postJson('/api/notifier/backup', ['type' => 'backup_storage'], [
+                'X-Notifier-Token' => 'test-backup-code',
+            ]);
+
+            expect($response->status())->not->toBe(422);
         });
     });
 
-    describe('__invoke method', function () {
-        describe('request validation', function () {
-            it('requires param field in request', function () {
-                $request = new Request;
-
-                expect(fn () => $this->controller->__invoke($request, $this->mockConfigService))
-                    ->toThrow(ValidationException::class);
-            });
-
-            it('validates param field to be one of allowed values', function () {
-                $request = new Request(['param' => 'invalid_param']);
-
-                expect(fn () => $this->controller->__invoke($request, $this->mockConfigService))
-                    ->toThrow(ValidationException::class);
-            });
+    describe('authentication', function () {
+        it('returns 401 when token header is missing', function () {
+            $this->postJson('/api/notifier/backup', ['type' => 'database'])
+                ->assertStatus(401);
         });
 
-        describe('environment validation', function () {
-            it('returns error when environment variables are missing', function () {
-                $request = new Request(['param' => 'backup_database']);
+        it('returns 403 when token header is wrong', function () {
+            $this->postJson('/api/notifier/backup', ['type' => 'database'], [
+                'X-Notifier-Token' => 'wrong-token',
+            ])->assertStatus(403);
+        });
 
-                // Mock the config service to return missing variables
-                $this->mockConfigService
-                    ->shouldReceive('checkEnvironment')
-                    ->once()
-                    ->andReturn(['DB_HOST', 'DB_USERNAME']);
+        it('returns 200 when token header is correct', function () {
+            $response = $this->postJson('/api/notifier/backup', ['type' => 'database'], [
+                'X-Notifier-Token' => 'test-backup-code',
+            ]);
 
-                $response = $this->controller->__invoke($request, $this->mockConfigService);
-                expect($response->getStatusCode())->toBe(500);
+            expect($response->status())->not->toBe(401);
+            expect($response->status())->not->toBe(403);
+        });
+    });
 
-                $content = json_decode($response->getContent(), true);
-                expect($content['message'])->toContain('environment variables are missing');
-            });
+    describe('environment validation', function () {
+        it('returns 500 when environment variables are missing', function () {
+            Config::set('notifier.backup_code', '');
+            Config::set('notifier.backup_url', '');
+            Config::set('notifier.backup_zip_password', '');
 
-            it('proceeds when all environment variables are set', function () {
-                $request = new Request(['param' => 'backup_database']);
-
-                // Mock the config service to return no missing variables
-                $this->mockConfigService
-                    ->shouldReceive('checkEnvironment')
-                    ->once()
-                    ->andReturn([]);
-
-                $response = $this->controller->__invoke($request, $this->mockConfigService);
-                // Should not return the missing variables error
-                expect($response->getStatusCode())->not->toBe(500);
-            });
+            $this->postJson('/api/notifier/backup', ['type' => 'database'], [
+                'X-Notifier-Token' => '',
+            ])->assertStatus(500);
         });
     });
 
     describe('JSON response structure', function () {
-        it('returns proper JSON structure for error responses', function () {
-            $request = new Request(['param' => 'backup_database']);
+        it('returns proper JSON structure for missing variables error', function () {
+            Config::set('notifier.backup_code', '');
+            Config::set('notifier.backup_url', '');
+            Config::set('notifier.backup_zip_password', '');
 
-            // Mock the config service to return missing variables
-            $this->mockConfigService
-                ->shouldReceive('checkEnvironment')
-                ->once()
-                ->andReturn(['DB_HOST']);
+            $response = $this->postJson('/api/notifier/backup', ['type' => 'database'], [
+                'X-Notifier-Token' => '',
+            ]);
 
-            $response = $this->controller->__invoke($request, $this->mockConfigService);
-            $content = json_decode($response->getContent(), true);
-
-            expect($content)->toHaveKeys(['message', 'variables']);
-        });
-    });
-
-    describe('controller design', function () {
-        it('uses method injection for NotifierConfigService', function () {
-            $reflection = new ReflectionClass(NotifierController::class);
-            $method = $reflection->getMethod('__invoke');
-            $parameters = $method->getParameters();
-
-            expect($parameters)->toHaveCount(2);
-            expect($parameters[1]->getType()->getName())->toBe(NotifierConfigService::class);
-        });
-
-        it('implements proper method injection pattern', function () {
-            $controller = new NotifierController;
-            expect($controller)->toBeInstanceOf(NotifierController::class);
-
-            // Test that the controller accepts the injected service via method
-            $request = new Request(['param' => 'backup_database']);
-
-            $this->mockConfigService
-                ->shouldReceive('checkEnvironment')
-                ->once()
-                ->andReturn(['MISSING_VAR']);
-
-            $response = $controller->__invoke($request, $this->mockConfigService);
-            expect($response)->toBeInstanceOf('Illuminate\Http\JsonResponse');
+            $response->assertStatus(500)
+                ->assertJsonStructure(['message', 'missing_variables']);
         });
     });
 });

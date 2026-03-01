@@ -138,7 +138,7 @@ describe('NotifierServiceProvider', function () {
             }
 
             expect($backupRoute)->not->toBeNull();
-            expect($backupRoute->middleware())->toContain('throttle:5,60');
+            expect($backupRoute->middleware())->toContain('throttle:10,60');
         });
     });
 

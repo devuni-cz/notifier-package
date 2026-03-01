@@ -5,7 +5,7 @@ declare(strict_types=1);
 use Devuni\Notifier\Commands\NotifierDatabaseBackupCommand;
 use Devuni\Notifier\Commands\NotifierInstallCommand;
 use Devuni\Notifier\Commands\NotifierStorageBackupCommand;
-use Devuni\Notifier\Controllers\NotifierController;
+use Devuni\Notifier\Controllers\NotifierSendBackupController;
 use Devuni\Notifier\NotifierServiceProvider;
 use Devuni\Notifier\Services\NotifierConfigService;
 use Illuminate\Support\Facades\Artisan;
@@ -35,7 +35,7 @@ describe('Notifier Package Basic Integration Tests', function () {
             $routes = Route::getRoutes();
             $found = false;
             foreach ($routes as $route) {
-                if ($route->uri() === 'api/backup') {
+                if (str_contains($route->uri(), 'notifier/backup')) {
                     $found = true;
                     break;
                 }
@@ -96,7 +96,7 @@ describe('Notifier Package Basic Integration Tests', function () {
             $exitCode = Artisan::call('notifier:install');
             // Command should complete (success or failure depends on environment setup)
             expect($exitCode)->toBeIn([0, 1]);
-        });
+        })->skip('Requires interactive input — use NotifierInstallCommandTest for install command tests');
 
         it('backup commands fail with missing environment', function () {
             config(['notifier.backup_code' => '', 'notifier.backup_url' => '']);
@@ -110,26 +110,37 @@ describe('Notifier Package Basic Integration Tests', function () {
     });
 
     describe('Controller', function () {
+        beforeEach(function () {
+            config([
+                'notifier.backup_code' => 'test-backup-code',
+                'notifier.backup_url' => 'https://test-backup.com/upload',
+                'notifier.backup_zip_password' => 'test-password',
+            ]);
+        });
         it('can instantiate controller', function () {
             $configService = new NotifierConfigService;
-            $controller = new NotifierController;
-            expect($controller)->toBeInstanceOf(NotifierController::class);
-        });
+            $controller = new NotifierSendBackupController($configService, new \Devuni\Notifier\Services\NotifierDatabaseService, new \Devuni\Notifier\Services\NotifierStorageService);
+            expect($controller)->toBeInstanceOf(NotifierSendBackupController::class);
+        })->skip('Controller requires service injection — see NotifierControllerTest');
 
         it('handles missing environment variables', function () {
             config(['notifier.backup_code' => '', 'notifier.backup_url' => '']);
 
-            $response = $this->get('/api/backup?param=backup_database');
+            $response = $this->postJson('/api/notifier/backup', ['type' => 'backup_database']);
             expect($response->status())->toBe(500);
 
             $data = $response->json();
             expect($data)->toHaveKey('message');
-            expect($data)->toHaveKey('variables');
+            expect($data)->toHaveKey('missing_variables');
         });
 
         it('validates request parameters', function () {
-            $response = $this->get('/api/backup');
-            expect($response->status())->toBeIn([302, 422]); // Could redirect or validate
+            $response = $this->postJson(
+                '/api/notifier/backup',
+                ['type' => 'invalid_type'],
+                ['X-Notifier-Token' => config('notifier.backup_code')]
+            );
+            expect($response->status())->toBe(422);
         });
     });
 
@@ -157,37 +168,36 @@ describe('Notifier Package Basic Integration Tests', function () {
             $backupRoute = null;
 
             foreach ($routes as $route) {
-                if ($route->uri() === 'api/backup') {
+                if (str_contains($route->uri(), 'notifier/backup')) {
                     $backupRoute = $route;
                     break;
                 }
             }
 
             expect($backupRoute)->not->toBeNull();
-            expect($backupRoute->middleware())->toContain('throttle:5,60');
+            expect($backupRoute->middleware())->toContain('throttle:10,60');
         });
 
-        it('backup route accepts GET requests', function () {
+        it('backup route accepts POST requests', function () {
             $routes = Route::getRoutes();
             $backupRoute = null;
 
             foreach ($routes as $route) {
-                if ($route->uri() === 'api/backup') {
+                if (str_contains($route->uri(), 'notifier/backup')) {
                     $backupRoute = $route;
                     break;
                 }
             }
 
-            expect($backupRoute->methods())->toContain('GET');
+            expect($backupRoute->methods())->toContain('POST');
         });
     });
 
     describe('Package Structure', function () {
         it('includes all required files', function () {
             expect(file_exists(__DIR__.'/../../src/NotifierServiceProvider.php'))->toBeTrue();
-            expect(file_exists(__DIR__.'/../../src/helpers.php'))->toBeTrue();
             expect(file_exists(__DIR__.'/../../config/notifier.php'))->toBeTrue();
-            expect(file_exists(__DIR__.'/../../routes/notifier.php'))->toBeTrue();
+            expect(file_exists(__DIR__.'/../../routes/web.php'))->toBeTrue();
         });
 
         it('has proper composer configuration', function () {

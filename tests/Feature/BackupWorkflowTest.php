@@ -7,6 +7,7 @@ use Devuni\Notifier\Services\NotifierDatabaseService;
 use Devuni\Notifier\Services\NotifierStorageService;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Config;
+use Illuminate\Support\Facades\Http;
 
 describe('Backup Workflow Integration', function () {
     beforeEach(function () {
@@ -112,36 +113,50 @@ describe('Backup Workflow Integration', function () {
 
     describe('API Workflow Integration', function () {
         it('responds to database backup API request', function () {
-            $response = $this->get('/api/backup?param=backup_database');
+            Http::fake(['*' => Http::response('', 200)]);
 
-            // Should succeed with proper environment
-            expect($response->status())->toBeIn([200, 500]); // Success or runtime error
+            $response = $this->postJson(
+                '/api/notifier/backup',
+                ['type' => 'backup_database'],
+                ['X-Notifier-Token' => 'test-backup-code']
+            );
+
+            expect($response->status())->toBeIn([200, 500]);
         });
 
         it('responds to storage backup API request', function () {
-            $response = $this->get('/api/backup?param=backup_storage');
+            Http::fake(['*' => Http::response('', 200)]);
 
-            // Should succeed with proper environment
-            expect($response->status())->toBeIn([200, 500]); // Success or runtime error
+            $response = $this->postJson(
+                '/api/notifier/backup',
+                ['type' => 'backup_storage'],
+                ['X-Notifier-Token' => 'test-backup-code']
+            );
+
+            expect($response->status())->toBeIn([200, 500]);
         });
 
         it('validates API request parameters', function () {
-            $response = $this->get('/api/backup?param=invalid_backup');
+            $response = $this->postJson(
+                '/api/notifier/backup',
+                ['type' => 'invalid_backup'],
+                ['X-Notifier-Token' => 'test-backup-code']
+            );
 
-            expect($response->status())->toBe(422); // Validation error
+            expect($response->status())->toBe(422);
         });
 
         it('checks environment before processing API requests', function () {
             Config::set('notifier.backup_code', '');
             Config::set('notifier.backup_url', '');
 
-            $response = $this->get('/api/backup?param=backup_database');
+            $response = $this->postJson('/api/notifier/backup', ['type' => 'backup_database']);
 
             expect($response->status())->toBe(500);
 
             $data = $response->json();
-            expect($data['message'])->toContain('missing or empty');
-            expect($data['variables'])->toBeArray();
+            expect($data['message'])->toBe('Server configuration incomplete.');
+            expect($data['missing_variables'])->toBeArray();
         });
     });
 
