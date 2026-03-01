@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <phpunit
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-        xsi:noNamespaceSchemaLocation="https://schema.phpunit.de/11.0/phpunit.xsd"
+        xsi:noNamespaceSchemaLocation="https://schema.phpunit.de/12.0/phpunit.xsd"
         bootstrap="vendor/autoload.php"
         colors="true"
         processIsolation="false"
@@ -31,9 +31,13 @@
         <env name="APP_ENV" value="testing"/>
         <env name="BCRYPT_ROUNDS" value="4"/>
         <env name="CACHE_DRIVER" value="array"/>
-        <env name="DB_CONNECTION" value="testing"/>
         <env name="MAIL_MAILER" value="array"/>
         <env name="QUEUE_CONNECTION" value="sync"/>
         <env name="SESSION_DRIVER" value="array"/>
+        <env name="NOTIFIER_BACKUP_CODE" value=""/>
+        <env name="NOTIFIER_URL" value=""/>
+        <env name="NOTIFIER_BACKUP_PASSWORD" value=""/>
+        <env name="NOTIFIER_LOGGING_CHANNEL" value="single"/>
+        <env name="NOTIFIER_ROUTES_ENABLED" value="true"/>
     </php>
 </phpunit>

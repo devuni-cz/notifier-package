@@ -15,32 +15,41 @@ use Illuminate\Support\ServiceProvider;
 
 class NotifierServiceProvider extends ServiceProvider
 {
+    public static function basePath(string $path): string
+    {
+        return __DIR__.'/..'.$path;
+    }
+
+    public function register(): void
+    {
+        $this->mergeConfigFrom(self::basePath('/config/notifier.php'), 'notifier');
+
+        $this->app->singleton(NotifierConfigService::class);
+        $this->app->singleton(NotifierDatabaseService::class);
+        $this->app->singleton(NotifierStorageService::class);
+    }
+
     public function boot(): void
     {
+        if ($this->app->runningInConsole()) {
+            $this->publishes([
+                self::basePath('/config/notifier.php') => config_path('notifier.php'),
+            ], 'notifier-config');
+
+            $this->commands([
+                NotifierCheckCommand::class,
+                NotifierDatabaseBackupCommand::class,
+                NotifierInstallCommand::class,
+                NotifierStorageBackupCommand::class,
+            ]);
+        }
+
         $this->publishes([
             __DIR__.'/../config/notifier.php' => config_path('notifier.php'),
         ], 'config');
 
         if (config('notifier.routes_enabled', true)) {
-            $this->loadRoutesFrom(__DIR__.'/../routes/notifier.php');
+            $this->loadRoutesFrom(__DIR__.'/../routes/web.php');
         }
-    }
-
-    public function register(): void
-    {
-        $this->mergeConfigFrom(__DIR__.'/../config/notifier.php', 'notifier');
-
-        $this->app->singleton(NotifierConfigService::class);
-        $this->app->singleton(NotifierDatabaseService::class);
-        $this->app->singleton(NotifierStorageService::class);
-
-        $this->commands([
-            NotifierCheckCommand::class,
-            NotifierDatabaseBackupCommand::class,
-            NotifierInstallCommand::class,
-            NotifierStorageBackupCommand::class,
-        ]);
-
-        require_once __DIR__.'/helpers.php';
     }
 }
