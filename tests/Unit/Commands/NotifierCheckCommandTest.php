@@ -4,8 +4,14 @@ declare(strict_types=1);
 
 use Devuni\Notifier\Commands\NotifierCheckCommand;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Http;
 
 describe('NotifierCheckCommand', function () {
+    beforeEach(function () {
+        Http::fake([
+            '*' => Http::response('', 200),
+        ]);
+    });
     describe('command registration', function () {
         it('is registered in artisan', function () {
             $commands = Artisan::all();
@@ -133,7 +139,7 @@ describe('NotifierCheckCommand', function () {
         it('checks backup URL connectivity when configured', function () {
             config([
                 'notifier.backup_code' => 'test-code',
-                'notifier.backup_url' => 'https://httpbin.org/post',
+                'notifier.backup_url' => 'https://test-backup.com/upload',
                 'notifier.backup_zip_password' => 'test-password',
             ]);
 
