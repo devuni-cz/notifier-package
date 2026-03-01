@@ -4,7 +4,6 @@
 [![Total Downloads](https://img.shields.io/packagist/dt/devuni/notifier-package.svg?style=flat-square)](https://packagist.org/packages/devuni/notifier-package)
 [![Tests](https://github.com/devuni-cz/notifier-package/actions/workflows/tests.yml/badge.svg)](https://github.com/devuni-cz/notifier-package/actions/workflows/tests.yml)
 
- 
 A Laravel 12 package for automated database and storage backups with secure remote uploads.
 
 ## Features
