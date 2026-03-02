@@ -107,6 +107,8 @@ final class NotifierDatabaseService
                 'error' => $th->getMessage(),
                 'file_size' => filesize($path),
                 'php_file_upload_limit' => ini_get('upload_max_filesize'),
+                'php_post_max_size' => ini_get('post_max_size'),
+                'php_memory_limit' => ini_get('memory_limit'),
                 'url' => config('notifier.backup_url'),
             ]);
             NotifierLogger::get()->emergency('❌ END OF SESSION ❌');
