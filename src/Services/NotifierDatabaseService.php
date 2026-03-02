@@ -105,6 +105,8 @@ final class NotifierDatabaseService
         } catch (Throwable $th) {
             NotifierLogger::get()->emergency('❌ an error occurred while uploading a file', [
                 'error' => $th->getMessage(),
+                'file_size' => filesize($path),
+                'php_file_upload_limit' => ini_get('upload_max_filesize'),
                 'url' => config('notifier.backup_url'),
             ]);
             NotifierLogger::get()->emergency('❌ END OF SESSION ❌');
