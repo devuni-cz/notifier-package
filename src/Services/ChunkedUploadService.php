@@ -144,16 +144,21 @@ final class ChunkedUploadService
                     return;
                 }
 
-                // Don't retry 4xx errors (client mistakes)
-                if ($response->status() >= 400 && $response->status() < 500) {
+                // Retry 429 (rate limited) — it's transient, not a client mistake
+                if ($response->status() === 429) {
+                    $lastException = new RuntimeException(
+                        "Chunk {$chunkNumber} rate limited: HTTP 429"
+                    );
+                } elseif ($response->status() >= 400 && $response->status() < 500) {
+                    // Don't retry other 4xx errors (client mistakes)
                     throw new RuntimeException(
                         "Chunk {$chunkNumber} rejected: HTTP ".$response->status().' — '.$response->body()
                     );
+                } else {
+                    $lastException = new RuntimeException(
+                        "Chunk {$chunkNumber} failed: HTTP ".$response->status().' — '.$response->body()
+                    );
                 }
-
-                $lastException = new RuntimeException(
-                    "Chunk {$chunkNumber} failed: HTTP ".$response->status().' — '.$response->body()
-                );
             } catch (RuntimeException $e) {
                 throw $e;
             } catch (Throwable $e) {
