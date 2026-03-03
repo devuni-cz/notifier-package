@@ -95,7 +95,7 @@ final class ChunkedUploadService
     ): string {
         $response = Http::timeout(30)
             ->withHeaders(['X-Notifier-Token' => $token])
-            ->post(rtrim($baseUrl, '/').'/uploads/init', [
+            ->post(mb_rtrim($baseUrl, '/').'/uploads/init', [
                 'backup_type' => $backupType,
                 'filename' => $filename,
                 'total_size' => $fileSize,
@@ -128,7 +128,7 @@ final class ChunkedUploadService
         int $retryDelayMs = 2000,
     ): void {
         $lastException = null;
-        $url = rtrim($baseUrl, '/').'/uploads/'.$uploadId.'/chunks/'.$chunkNumber;
+        $url = mb_rtrim($baseUrl, '/').'/uploads/'.$uploadId.'/chunks/'.$chunkNumber;
 
         for ($attempt = 1; $attempt <= $maxAttempts; $attempt++) {
             try {
@@ -162,7 +162,7 @@ final class ChunkedUploadService
 
             if ($attempt < $maxAttempts) {
                 NotifierLogger::get()->warning("⚠️ chunk {$chunkNumber} attempt {$attempt} failed, retrying...", [
-                    'error' => $lastException?->getMessage(),
+                    'error' => $lastException->getMessage(),
                 ]);
                 usleep($retryDelayMs * 1000);
             }
@@ -175,7 +175,7 @@ final class ChunkedUploadService
     {
         $response = Http::timeout(300)
             ->withHeaders(['X-Notifier-Token' => $token])
-            ->post(rtrim($baseUrl, '/').'/uploads/'.$uploadId.'/finalize');
+            ->post(mb_rtrim($baseUrl, '/').'/uploads/'.$uploadId.'/finalize');
 
         if (! $response->successful()) {
             throw new RuntimeException(
