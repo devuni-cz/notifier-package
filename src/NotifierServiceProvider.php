@@ -8,6 +8,7 @@ use Devuni\Notifier\Commands\NotifierCheckCommand;
 use Devuni\Notifier\Commands\NotifierDatabaseBackupCommand;
 use Devuni\Notifier\Commands\NotifierInstallCommand;
 use Devuni\Notifier\Commands\NotifierStorageBackupCommand;
+use Devuni\Notifier\Services\ChunkedUploadService;
 use Devuni\Notifier\Services\NotifierConfigService;
 use Devuni\Notifier\Services\NotifierDatabaseService;
 use Devuni\Notifier\Services\NotifierStorageService;
@@ -25,6 +26,7 @@ final class NotifierServiceProvider extends ServiceProvider
         $this->mergeConfigFrom(self::basePath('/config/notifier.php'), 'notifier');
 
         $this->app->singleton(NotifierConfigService::class);
+        $this->app->singleton(ChunkedUploadService::class);
         $this->app->singleton(NotifierDatabaseService::class);
         $this->app->singleton(NotifierStorageService::class);
     }

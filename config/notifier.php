@@ -115,4 +115,17 @@ return [
     |
     */
     'zip_strategy' => env('NOTIFIER_ZIP_STRATEGY', 'auto'),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Chunk Size
+    |--------------------------------------------------------------------------
+    |
+    | The size of each chunk in bytes when uploading backup files.
+    | Default is 20 MB.
+    |
+    | If you are using for example Cloudflare, you must stay under their upload limit (100 MB) of free plan.
+    |
+    */
+    'chunk_size' => env('NOTIFIER_CHUNK_SIZE', 20 * 1024 * 1024),
 ];

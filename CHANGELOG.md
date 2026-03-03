@@ -5,6 +5,19 @@ All notable changes to `devuni/notifier-package` will be documented in this file
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.3.0] - 2026-03-03
+### Added
+-   Chunked upload protocol to avoid Cloudflare 413 Payload Too Large errors
+-   New `ChunkedUploadService` — splits backup files into 20 MB chunks and sends via 3-phase protocol (init → chunks → finalize)
+-   Per-chunk retry logic (3 attempts, 2s delay) for resilient uploads
+-   SHA-256 checksum verification for both individual chunks and the complete file
+-   New `chunk_size` config option (`NOTIFIER_CHUNK_SIZE` env var, default 20 MB)
+
+### Changed
+-   `NotifierStorageService` and `NotifierDatabaseService` now use `ChunkedUploadService` via constructor DI
+-   Removed `uploadWithRetry()` from both services (replaced by chunked upload logic)
+-   Registered `ChunkedUploadService` as singleton in `NotifierServiceProvider`
+
 ## [2.2.6] - 2026-03-02
 ### Changed
 -   Added more information to error logs in `NotifierDatabaseService` and `NotifierStorageService` for better debugging.
