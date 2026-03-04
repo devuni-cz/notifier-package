@@ -138,9 +138,9 @@ return [
     | When set to anything other than 'sync', backups are offloaded to a
     | queue worker — avoiding PHP max_execution_time limits.
     |
-    | Reads from Laravel's QUEUE_CONNECTION by default.
-    | Artisan commands are not affected — they always run synchronously.
+    | Set NOTIFIER_QUEUE_CONNECTION to 'database', 'redis', etc. to enable.
+    | Defaults to 'sync' (runs in the HTTP request). Artisan commands are not affected — they always run synchronously.
     |
     */
-    'queue_connection' => env('QUEUE_CONNECTION', 'sync'),
+    'queue_connection' => env('NOTIFIER_QUEUE_CONNECTION', 'sync'),
 ];

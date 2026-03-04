@@ -5,6 +5,11 @@ All notable changes to `devuni/notifier-package` will be documented in this file
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.3.3] - 2026-03-04
+
+### Fixed
+-   Queue connection config now uses dedicated `NOTIFIER_QUEUE_CONNECTION` env var instead of reading Laravel's `QUEUE_CONNECTION` — prevents unintended async dispatch on apps that have a queue driver configured but didn't opt into queued backups
+
 ## [2.3.2] - 2026-03-04
 
 ### Added

@@ -249,7 +249,7 @@ final class NotifierCheckCommand extends Command
 
         if ($connection === 'sync') {
             $this->line('   <fg=gray>ℹ</> Queue connection is "sync" — backups run synchronously in the HTTP request');
-            $this->line('   <fg=gray>→ Set QUEUE_CONNECTION to database, redis, or another async driver to offload backups</>');
+            $this->line('   <fg=gray>→ Set NOTIFIER_QUEUE_CONNECTION to database, redis, or another async driver to offload backups</>');
         } else {
             $this->line("   <fg=green>✓</> Backups dispatched to queue: <fg=cyan>{$connection}</>");
         }
