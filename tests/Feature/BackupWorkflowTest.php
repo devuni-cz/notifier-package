@@ -41,9 +41,9 @@ describe('Backup Workflow Integration', function () {
             $configService = new NotifierConfigService;
             $missing = $configService->checkEnvironment();
 
-            expect($missing)->toContain('BACKUP_CODE');
-            expect($missing)->toContain('BACKUP_URL');
-            expect($missing)->not->toContain('BACKUP_ZIP_PASSWORD');
+            expect($missing)->toContain('NOTIFIER_BACKUP_CODE');
+            expect($missing)->toContain('NOTIFIER_URL');
+            expect($missing)->not->toContain('NOTIFIER_BACKUP_PASSWORD');
         });
     });
 

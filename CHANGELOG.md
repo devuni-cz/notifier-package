@@ -5,6 +5,23 @@ All notable changes to `devuni/notifier-package` will be documented in this file
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.3.1] - 2026-03-04
+
+### Added
+-   Queue support for backup jobs — backups can now be dispatched to a queue worker instead of running synchronously in the HTTP request
+-   New `ProcessBackupJob` queued job with 15-minute timeout and single-attempt safety
+-   New `queue_connection` config option (`QUEUE_CONNECTION` env var, default `sync`)
+-   Queue configuration check in `notifier:check` command
+
+### Changed
+-   Renamed environment variable references in validation output: `BACKUP_ZIP_PASSWORD` → `NOTIFIER_BACKUP_PASSWORD`, `BACKUP_CODE` → `NOTIFIER_BACKUP_CODE`, `BACKUP_URL` → `NOTIFIER_URL`
+-   `ChunkedUploadService` now streams chunks via temp files instead of loading into memory — avoids memory exhaustion on large backups
+-   `NotifierDatabaseService` and `NotifierStorageService` now re-throw exceptions instead of silently logging, enabling proper error propagation in queued jobs
+-   Backup filenames now include time (`Y-m-d_H-i-s`) to avoid collisions on multiple daily backups
+
+### Fixed
+-   Updated all test assertions to match renamed environment variable names
+
 ## [2.3.0] - 2026-03-03
 ### Added
 -   Chunked upload protocol to avoid Cloudflare 413 Payload Too Large errors

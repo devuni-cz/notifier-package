@@ -57,9 +57,9 @@ describe('Notifier Package Basic Integration Tests', function () {
             $missing = $service->checkEnvironment();
 
             expect($missing)->not->toBeEmpty();
-            expect($missing)->toContain('BACKUP_CODE');
-            expect($missing)->toContain('BACKUP_URL');
-            expect($missing)->toContain('BACKUP_ZIP_PASSWORD');
+            expect($missing)->toContain('NOTIFIER_BACKUP_CODE');
+            expect($missing)->toContain('NOTIFIER_URL');
+            expect($missing)->toContain('NOTIFIER_BACKUP_PASSWORD');
         });
 
         it('returns no missing variables when properly configured', function () {

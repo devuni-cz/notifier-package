@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Devuni\Notifier\Controllers;
 
 use Devuni\Notifier\Enums\BackupTypeEnum;
+use Devuni\Notifier\Jobs\ProcessBackupJob;
 use Devuni\Notifier\Requests\BackupRequest;
 use Devuni\Notifier\Services\NotifierDatabaseService;
 use Devuni\Notifier\Services\NotifierStorageService;
@@ -21,10 +22,32 @@ final class NotifierSendBackupController
 
     public function __invoke(BackupRequest $request): JsonResponse
     {
+        if (config('notifier.queue_connection', 'sync') !== 'sync') {
+            return $this->dispatchBackupJob($request->backupType());
+        }
+
         return match ($request->backupType()) {
             BackupTypeEnum::Database => $this->backupDatabase(),
             BackupTypeEnum::Storage => $this->backupStorage(),
         };
+    }
+
+    private function dispatchBackupJob(BackupTypeEnum $backupType): JsonResponse
+    {
+        ProcessBackupJob::dispatch($backupType)
+            ->onConnection(config('notifier.queue_connection'));
+
+        NotifierLogger::get()->info('📨 backup job dispatched to queue', [
+            'backup_type' => $backupType->value,
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Backup job dispatched to queue.',
+            'backup_type' => $backupType->value,
+            'queued' => true,
+            'timestamp' => now()->toIso8601String(),
+        ]);
     }
 
     private function backupDatabase(): JsonResponse

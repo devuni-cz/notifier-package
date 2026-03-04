@@ -18,9 +18,9 @@ describe('NotifierStorageBackupCommand', function () {
 
             $this->artisan('notifier:storage-backup')
                 ->expectsOutputToContain('The following environment variables are missing or empty:')
-                ->expectsOutputToContain('• BACKUP_CODE')
-                ->expectsOutputToContain('• BACKUP_URL')
-                ->expectsOutputToContain('• BACKUP_ZIP_PASSWORD')
+                ->expectsOutputToContain('• NOTIFIER_BACKUP_CODE')
+                ->expectsOutputToContain('• NOTIFIER_URL')
+                ->expectsOutputToContain('• NOTIFIER_BACKUP_PASSWORD')
                 ->assertExitCode(1);
         });
 
@@ -31,7 +31,7 @@ describe('NotifierStorageBackupCommand', function () {
 
             $this->artisan('notifier:storage-backup')
                 ->expectsOutputToContain('ERROR')
-                ->expectsOutputToContain('• BACKUP_ZIP_PASSWORD')
+                ->expectsOutputToContain('• NOTIFIER_BACKUP_PASSWORD')
                 ->assertExitCode(1);
         });
 

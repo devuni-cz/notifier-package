@@ -23,7 +23,7 @@ return [
     | the central notifier.devuni.cz application.
     |
     */
-    'backup_url' => env('NOTIFIER_URL', env('BACKUP_URL')),
+    'backup_url' => env('NOTIFIER_URL', env('BACKUP_URL')), 
 
     /*
     |--------------------------------------------------------------------------
@@ -128,4 +128,19 @@ return [
     |
     */
     'chunk_size' => env('NOTIFIER_CHUNK_SIZE', 20 * 1024 * 1024),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Queue
+    |--------------------------------------------------------------------------
+    |
+    | The queue connection used for backup jobs dispatched via the HTTP API.
+    | When set to anything other than 'sync', backups are offloaded to a
+    | queue worker — avoiding PHP max_execution_time limits.
+    |
+    | Reads from Laravel's QUEUE_CONNECTION by default.
+    | Artisan commands are not affected — they always run synchronously.
+    |
+    */
+    'queue_connection' => env('QUEUE_CONNECTION', 'sync'),
 ];

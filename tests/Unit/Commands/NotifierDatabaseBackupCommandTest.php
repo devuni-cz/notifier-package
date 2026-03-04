@@ -18,8 +18,8 @@ describe('NotifierDatabaseBackupCommand', function () {
 
             $this->artisan('notifier:database-backup')
                 ->expectsOutputToContain('The following environment variables are missing or empty:')
-                ->expectsOutputToContain('• BACKUP_CODE')
-                ->expectsOutputToContain('• BACKUP_URL')
+                ->expectsOutputToContain('• NOTIFIER_BACKUP_CODE')
+                ->expectsOutputToContain('• NOTIFIER_URL')
                 ->assertExitCode(1);
         });
 
@@ -30,7 +30,7 @@ describe('NotifierDatabaseBackupCommand', function () {
 
             $this->artisan('notifier:database-backup')
                 ->expectsOutputToContain('ERROR')
-                ->expectsOutputToContain('• BACKUP_ZIP_PASSWORD')
+                ->expectsOutputToContain('• NOTIFIER_BACKUP_PASSWORD')
                 ->assertExitCode(1);
         });
 

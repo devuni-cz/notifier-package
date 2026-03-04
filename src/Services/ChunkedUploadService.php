@@ -55,7 +55,7 @@ final class ChunkedUploadService
 
         NotifierLogger::get()->info('✅ upload initialized', ['upload_id' => $uploadId]);
 
-        // Phase 2: Send chunks
+        // Phase 2: Send chunks (streamed to temp files to avoid memory exhaustion)
         $handle = fopen($path, 'rb');
 
         if ($handle === false) {
@@ -64,13 +64,32 @@ final class ChunkedUploadService
 
         try {
             for ($chunkNumber = 1; $chunkNumber <= $totalChunks; $chunkNumber++) {
-                $chunkData = fread($handle, $chunkSize);
+                $tmpPath = tempnam(sys_get_temp_dir(), 'notifier_chunk_');
 
-                if ($chunkData === false) {
-                    throw new RuntimeException("Failed to read chunk {$chunkNumber} from file");
+                if ($tmpPath === false) {
+                    throw new RuntimeException('Failed to create temporary file for chunk');
                 }
 
-                $this->sendChunk($baseUrl, $token, $uploadId, $chunkNumber, $chunkData);
+                $tmpHandle = fopen($tmpPath, 'wb');
+
+                if ($tmpHandle === false) {
+                    @unlink($tmpPath);
+                    throw new RuntimeException('Failed to open temporary chunk file for writing');
+                }
+
+                $bytesCopied = stream_copy_to_stream($handle, $tmpHandle, $chunkSize);
+                fclose($tmpHandle);
+
+                if ($bytesCopied === false || $bytesCopied === 0) {
+                    @unlink($tmpPath);
+                    throw new RuntimeException("Failed to write chunk {$chunkNumber} to temporary file");
+                }
+
+                try {
+                    $this->sendChunk($baseUrl, $token, $uploadId, $chunkNumber, $tmpPath);
+                } finally {
+                    @unlink($tmpPath);
+                }
 
                 NotifierLogger::get()->info("➡️ chunk {$chunkNumber}/{$totalChunks} sent");
             }
@@ -123,21 +142,32 @@ final class ChunkedUploadService
         string $token,
         string $uploadId,
         int $chunkNumber,
-        string $chunkData,
+        string $chunkPath,
         int $maxAttempts = 3,
         int $retryDelayMs = 2000,
     ): void {
         $lastException = null;
         $url = mb_rtrim($baseUrl, '/').'/uploads/'.$uploadId.'/chunks/'.$chunkNumber;
+        $chunkChecksum = hash_file('sha256', $chunkPath);
+
+        if ($chunkChecksum === false) {
+            throw new RuntimeException("Failed to compute checksum for chunk {$chunkNumber}");
+        }
 
         for ($attempt = 1; $attempt <= $maxAttempts; $attempt++) {
             try {
+                $stream = fopen($chunkPath, 'rb');
+
+                if ($stream === false) {
+                    throw new RuntimeException("Failed to open chunk file for reading: {$chunkPath}");
+                }
+
                 $response = Http::timeout(120)
                     ->withHeaders([
                         'X-Notifier-Token' => $token,
-                        'X-Chunk-Checksum' => hash('sha256', $chunkData),
+                        'X-Chunk-Checksum' => $chunkChecksum,
                     ])
-                    ->attach('chunk', $chunkData, 'chunk_'.$chunkNumber)
+                    ->attach('chunk', $stream, 'chunk_'.$chunkNumber)
                     ->post($url);
 
                 if ($response->successful()) {

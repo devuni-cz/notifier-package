@@ -32,6 +32,7 @@ final class NotifierCheckCommand extends Command
         $this->checkMysqldumpAvailability();
         $this->checkZipAvailability();
         $this->checkLoggingChannel();
+        $this->checkQueueConfiguration();
         $this->checkBackupUrlReachability();
 
         $this->newLine();
@@ -237,6 +238,22 @@ final class NotifierCheckCommand extends Command
             $this->line("   <fg=yellow>⚠</> Logging channel '<fg=cyan>{$preferredChannel}</>' not found, using '<fg=cyan>daily</>' fallback");
             $this->line('   <fg=gray>→ Add the channel to config/logging.php for dedicated backup logs</>');
         }
+        $this->newLine();
+    }
+
+    private function checkQueueConfiguration(): void
+    {
+        $this->line('<fg=yellow;options=bold>🔍 Checking queue configuration...</>');
+
+        $connection = config('notifier.queue_connection', 'sync');
+
+        if ($connection === 'sync') {
+            $this->line('   <fg=gray>ℹ</> Queue connection is "sync" — backups run synchronously in the HTTP request');
+            $this->line('   <fg=gray>→ Set QUEUE_CONNECTION to database, redis, or another async driver to offload backups</>');
+        } else {
+            $this->line("   <fg=green>✓</> Backups dispatched to queue: <fg=cyan>{$connection}</>");
+        }
+
         $this->newLine();
     }
 

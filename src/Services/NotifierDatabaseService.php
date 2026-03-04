@@ -26,7 +26,7 @@ final class NotifierDatabaseService
         $backupDirectory = storage_path('app/private');
         File::ensureDirectoryExists($backupDirectory);
 
-        $filename = 'backup-'.Carbon::now()->format('Y-m-d').'.sql';
+        $filename = 'backup-'.Carbon::now()->format('Y-m-d_H-i-s').'.sql';
         $path = $backupDirectory.'/'.$filename;
 
         NotifierLogger::get()->info('➡️ creating backup file');
@@ -69,7 +69,7 @@ final class NotifierDatabaseService
         $password = config('notifier.backup_zip_password');
 
         if (! empty($password)) {
-            $zipPath = $backupDirectory.'/backup-'.Carbon::now()->format('Y-m-d').'.zip';
+            $zipPath = $backupDirectory.'/backup-'.Carbon::now()->format('Y-m-d_H-i-s').'.zip';
 
             $zipCreator = ZipManager::resolve();
             $zipCreator->create($path, $zipPath, $password, []);
@@ -101,7 +101,8 @@ final class NotifierDatabaseService
                 'php_memory_limit' => ini_get('memory_limit'),
                 'url' => config('notifier.backup_url'),
             ]);
-            NotifierLogger::get()->emergency('❌ END OF SESSION ❌');
+
+            throw $th;
         } finally {
             File::delete($path);
             NotifierLogger::get()->info('➡️ backup file cleaned up');

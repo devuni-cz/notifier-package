@@ -31,7 +31,7 @@ describe('NotifierConfigService', function () {
 
             $missing = $this->service->checkEnvironment();
 
-            expect($missing)->toContain('BACKUP_ZIP_PASSWORD');
+            expect($missing)->toContain('NOTIFIER_BACKUP_PASSWORD');
         });
 
         it('returns missing variables when backup_code is empty', function () {
@@ -43,7 +43,7 @@ describe('NotifierConfigService', function () {
 
             $missing = $this->service->checkEnvironment();
 
-            expect($missing)->toContain('BACKUP_CODE');
+            expect($missing)->toContain('NOTIFIER_BACKUP_CODE');
         });
 
         it('returns missing variables when backup_url is empty', function () {
@@ -55,7 +55,7 @@ describe('NotifierConfigService', function () {
 
             $missing = $this->service->checkEnvironment();
 
-            expect($missing)->toContain('BACKUP_URL');
+            expect($missing)->toContain('NOTIFIER_URL');
         });
 
         it('returns all missing variables when all are empty', function () {
@@ -68,9 +68,9 @@ describe('NotifierConfigService', function () {
             $missing = $this->service->checkEnvironment();
 
             expect($missing)->toHaveCount(3)
-                ->and($missing)->toContain('BACKUP_ZIP_PASSWORD')
-                ->and($missing)->toContain('BACKUP_CODE')
-                ->and($missing)->toContain('BACKUP_URL');
+                ->and($missing)->toContain('NOTIFIER_BACKUP_PASSWORD')
+                ->and($missing)->toContain('NOTIFIER_BACKUP_CODE')
+                ->and($missing)->toContain('NOTIFIER_URL');
         });
     });
 });
