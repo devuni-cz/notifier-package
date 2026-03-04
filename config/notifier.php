@@ -138,8 +138,16 @@ return [
     | When set to anything other than 'sync', backups are offloaded to a
     | queue worker — avoiding PHP max_execution_time limits.
     |
-    | Set NOTIFIER_QUEUE_CONNECTION to 'database', 'redis', etc. to enable.
-    | Defaults to 'sync' (runs in the HTTP request). Artisan commands are not affected — they always run synchronously.
+    | Supported: 'sync', 'database', 'redis', 'sqs', 'beanstalkd'
+    |            (any connection defined in config/queue.php)
+    |
+    | 'sync'       — runs backup synchronously in the HTTP request (default)
+    | 'database'   — dispatches to the jobs table (requires queue:table migration)
+    | 'redis'      — dispatches to Redis (requires phpredis or predis)
+    | 'sqs'        — dispatches to Amazon SQS
+    | 'beanstalkd' — dispatches to Beanstalkd
+    |
+    | Artisan commands are not affected — they always run synchronously.
     |
     */
     'queue_connection' => env('NOTIFIER_QUEUE_CONNECTION', 'sync'),
