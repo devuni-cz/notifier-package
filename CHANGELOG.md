@@ -5,7 +5,7 @@ All notable changes to `devuni/notifier-package` will be documented in this file
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.3.1] - 2026-03-04
+## [2.3.2] - 2026-03-04
 
 ### Added
 -   Queue support for backup jobs — backups can now be dispatched to a queue worker instead of running synchronously in the HTTP request
@@ -21,6 +21,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 -   Updated all test assertions to match renamed environment variable names
+
+## [2.3.1] - 2026-03-04 [YANKED]
 
 ## [2.3.0] - 2026-03-03
 ### Added
