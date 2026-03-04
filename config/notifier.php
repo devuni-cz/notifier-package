@@ -23,7 +23,7 @@ return [
     | the central notifier.devuni.cz application.
     |
     */
-    'backup_url' => env('NOTIFIER_URL', env('BACKUP_URL')), 
+    'backup_url' => env('NOTIFIER_URL', env('BACKUP_URL')),
 
     /*
     |--------------------------------------------------------------------------
