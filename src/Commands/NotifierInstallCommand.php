@@ -40,27 +40,27 @@ final class NotifierInstallCommand extends Command
         info('🔧 Please provide the required environment values:');
 
         $backupCode = text(
-            label: 'BACKUP_CODE',
+            label: 'NOTIFIER_BACKUP_CODE',
             placeholder: 'Enter your backup code',
             required: 'Backup code is required.',
         );
 
         $backupUrl = text(
-            label: 'BACKUP_URL',
+            label: 'NOTIFIER_URL',
             placeholder: 'https://your-notifier-server.com',
             required: 'Backup URL is required.',
         );
 
         $backupPassword = password(
-            label: 'BACKUP_ZIP_PASSWORD',
+            label: 'NOTIFIER_BACKUP_PASSWORD',
             placeholder: 'Enter your backup ZIP password',
             required: 'Backup password is required.',
         );
 
         $this->updateEnv([
-            'BACKUP_CODE' => $backupCode,
-            'BACKUP_URL' => $backupUrl,
-            'BACKUP_ZIP_PASSWORD' => $backupPassword,
+            'NOTIFIER_BACKUP_CODE' => $backupCode,
+            'NOTIFIER_URL' => $backupUrl,
+            'NOTIFIER_BACKUP_PASSWORD' => $backupPassword,
         ]);
 
         info('Notifier environment configuration was saved successfully!');
@@ -116,7 +116,7 @@ final class NotifierInstallCommand extends Command
             return false;
         }
         $envContent = file_get_contents($envPath);
-        $requiredKeys = ['BACKUP_CODE', 'BACKUP_URL', 'BACKUP_ZIP_PASSWORD'];
+        $requiredKeys = ['NOTIFIER_BACKUP_CODE', 'NOTIFIER_URL', 'NOTIFIER_BACKUP_PASSWORD'];
         $alreadySet = collect($requiredKeys)->every(function ($key) use ($envContent) {
             if (preg_match("/^{$key}=(.*)$/m", $envContent, $matches)) {
                 $value = mb_trim($matches[1], '"');

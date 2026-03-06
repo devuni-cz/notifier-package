@@ -85,9 +85,9 @@ final class NotifierCheckCommand extends Command
         $backupUrl = config('notifier.backup_url');
         $backupPassword = config('notifier.backup_zip_password');
 
-        $this->line('   <fg=gray>BACKUP_CODE:</> '.$this->maskValue($backupCode));
-        $this->line('   <fg=gray>BACKUP_URL:</> '.$backupUrl);
-        $this->line('   <fg=gray>BACKUP_ZIP_PASSWORD:</> '.$this->maskValue($backupPassword));
+        $this->line('   <fg=gray>NOTIFIER_BACKUP_CODE:</> '.$this->maskValue($backupCode));
+        $this->line('   <fg=gray>NOTIFIER_URL:</> '.$backupUrl);
+        $this->line('   <fg=gray>NOTIFIER_BACKUP_PASSWORD:</> '.$this->maskValue($backupPassword));
     }
 
     /**
