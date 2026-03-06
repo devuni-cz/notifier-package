@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Devuni\Notifier\Commands;
 
 use Devuni\Notifier\Concerns\ChecksNotifierEnvironment;
+use Devuni\Notifier\Concerns\DisplayHelper;
 use Devuni\Notifier\Services\NotifierConfigService;
 use Devuni\Notifier\Services\NotifierDatabaseService;
 use Illuminate\Console\Command;
@@ -12,6 +13,7 @@ use Illuminate\Console\Command;
 final class NotifierDatabaseBackupCommand extends Command
 {
     use ChecksNotifierEnvironment;
+    use DisplayHelper;
 
     protected $signature = 'notifier:database-backup';
 
@@ -19,6 +21,8 @@ final class NotifierDatabaseBackupCommand extends Command
 
     public function handle(NotifierConfigService $configService, NotifierDatabaseService $databaseService): int
     {
+        $this->displayNotifierHeader('Database Backup');
+
         if ($this->checkMissingVariables($configService) === self::FAILURE) {
             return self::FAILURE;
         }

@@ -164,7 +164,7 @@ describe('NotifierCheckCommand', function () {
 
         it('displays banner at start', function () {
             $this->artisan('notifier:check')
-                ->expectsOutputToContain('NOTIFIER PACKAGE HEALTH CHECK');
+                ->expectsOutputToContain('Notifier :: Health Check');
         });
     });
 });

@@ -12,7 +12,14 @@
     "license": "MIT",
     "require": {
         "php": "^8.4",
-        "illuminate/support": "^12.38.1"
+        "guzzlehttp/guzzle": "^7.9",
+        "illuminate/console": "^12.38.1",
+        "illuminate/contracts": "^12.38.1",
+        "illuminate/http": "^12.38.1",
+        "illuminate/queue": "^12.38.1",
+        "illuminate/routing": "^12.38.1",
+        "illuminate/support": "^12.38.1",
+        "laravel/prompts": "^0.3.10"
     },
     "require-dev": {
         "laravel/pint": "^1.27.1",
@@ -21,7 +28,8 @@
         "nunomaduro/collision": "^8.0",
         "orchestra/testbench": "^10.9.0",
         "pestphp/pest": "^4.4.1",
-        "pestphp/pest-plugin-laravel": "^4.0"
+        "pestphp/pest-plugin-laravel": "^4.0",
+        "rector/rector": "^2.1"
     },
     "authors": [
         {
@@ -57,13 +65,27 @@
     "scripts": {
         "test": "vendor/bin/pest --order-by random",
         "analyse": "vendor/bin/phpstan analyse",
+        "rector": "vendor/bin/rector",
         "test-coverage": "vendor/bin/pest --coverage",
         "format": "vendor/bin/pint",
         "release": "./scripts/release.sh",
-        "pre-commit": [
+        "lint": [
             "@format",
             "@analyse",
-            "@test-core"
+            "@rector"
+        ],
+        "lint:check": [
+            "vendor/bin/pint --test",
+            "@analyse",
+            "vendor/bin/rector --dry-run"
+        ],
+        "check": [
+            "@lint",
+            "@test"
+        ],
+        "pre-commit": [
+            "@lint",
+            "@test"
         ]
     },
     "minimum-stability": "dev",

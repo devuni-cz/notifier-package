@@ -5,6 +5,24 @@ All notable changes to `devuni/notifier-package` will be documented in this file
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.4.0] - 2026-03-06
+
+### Added
+-   `DisplayHelper` trait with gradient ASCII logo, themed badges, and reusable display utilities for all Artisan commands
+-   `Theme` enum with 5 color themes (Blue, Cyan, Green, Purple, Orange) — randomly selected per command invocation
+-   Rector (`rector/rector`) for automated code quality improvements with PHP 8.4 rule sets
+-   `laravel/prompts` for interactive install wizard — text inputs with validation and masked password entry
+-   Composite composer scripts: `lint`, `lint:check`, `check` for streamlined CI/dev workflows
+-   Explicitly declared all required illuminate components (`console`, `contracts`, `http`, `queue`, `routing`) and `guzzlehttp/guzzle`
+
+### Changed
+-   All 4 commands now use `DisplayHelper` trait for consistent branded output
+-   `NotifierInstallCommand` refactored to use Laravel Prompts (`text()`, `password()`, `confirm()`, `info()`, `error()`, `warning()`)
+-   `pre-commit` script now delegates to `@lint` + `@test` composite scripts
+
+### Fixed
+-   Broken `@test-core` reference in `pre-commit` composer script
+
 ## [2.3.4] - 2026-03-04
 
 ### Changed

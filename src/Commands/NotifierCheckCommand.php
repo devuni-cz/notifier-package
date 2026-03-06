@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Devuni\Notifier\Commands;
 
+use Devuni\Notifier\Concerns\DisplayHelper;
 use Devuni\Notifier\Services\NotifierConfigService;
 use Devuni\Notifier\Services\Zip\CliZipCreator;
 use Devuni\Notifier\Services\Zip\PhpZipCreator;
@@ -16,6 +17,8 @@ use Throwable;
 
 final class NotifierCheckCommand extends Command
 {
+    use DisplayHelper;
+
     protected $signature = 'notifier:check';
 
     protected $description = 'Check if Notifier package is configured correctly';
@@ -24,7 +27,7 @@ final class NotifierCheckCommand extends Command
 
     public function handle(NotifierConfigService $configService): int
     {
-        $this->displayBanner();
+        $this->displayNotifierHeader('Health Check');
 
         $this->checkEnvironmentVariables($configService);
         $this->checkDatabaseConnection();
@@ -48,18 +51,6 @@ final class NotifierCheckCommand extends Command
         $this->newLine();
 
         return self::SUCCESS;
-    }
-
-    /**
-     * Display the command banner.
-     */
-    private function displayBanner(): void
-    {
-        $this->newLine();
-        $this->line('<fg=cyan;options=bold>╔══════════════════════════════════════════╗</>');
-        $this->line('<fg=cyan;options=bold>║       NOTIFIER PACKAGE HEALTH CHECK      ║</>');
-        $this->line('<fg=cyan;options=bold>╚══════════════════════════════════════════╝</>');
-        $this->newLine();
     }
 
     /**
