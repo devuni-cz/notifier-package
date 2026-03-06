@@ -4,206 +4,280 @@
 [![Total Downloads](https://img.shields.io/packagist/dt/devuni/notifier-package.svg?style=flat-square)](https://packagist.org/packages/devuni/notifier-package)
 [![Tests](https://github.com/devuni-cz/notifier-package/actions/workflows/tests.yml/badge.svg)](https://github.com/devuni-cz/notifier-package/actions/workflows/tests.yml)
 
-A Laravel 12 package for automated database and storage backups with secure remote uploads.
+A Laravel package for automated, encrypted database and storage backups with secure remote delivery. Supports Artisan commands, HTTP API triggers, queue offloading, and AES-256 ZIP encryption out of the box.
 
 ## Features
 
--   Automated database backups with mysqldump (`--single-transaction`, `--quick`)
--   Automated storage backups with ZIP compression (AES-256 encryption)
--   Pluggable ZIP strategy — CLI 7z (recommended) with PHP ZipArchive fallback
--   Secure backup uploads to remote servers with retry and timeout
--   Token-based API authentication via `X-Notifier-Token` header
--   Password-protected ZIP archives
--   File and table exclusion configuration
--   REST API for remote backup triggers (rate-limited)
--   Configurable routes (prefix, enable/disable)
--   Comprehensive logging with configurable channels
--   Automatic backup file cleanup after upload
+-   **Database backups** — `mysqldump` with `--single-transaction` and `--quick` for consistent, low-memory dumps
+-   **Storage backups** — Archives `storage/app/public` into password-protected ZIP (AES-256)
+-   **Pluggable ZIP strategy** — CLI `7z` (recommended) with PHP `ZipArchive` fallback
+-   **Chunked uploads** — Large backup files split into configurable chunks (default 20 MB) for reliable transfer
+-   **Token-based authentication** — `X-Notifier-Token` header validated with constant-time comparison
+-   **Queue support** — Offload backup jobs to any Laravel queue driver to avoid HTTP timeout limits
+-   **Remote API trigger** — Rate-limited REST endpoint to trigger backups from an external scheduler
+-   **Exclusion lists** — Ignore specific database tables and storage files/directories
+-   **Configurable routing** — Custom route prefix, or disable routes entirely
+-   **Comprehensive logging** — Dedicated configurable logging channel with automatic fallback
+-   **Automatic cleanup** — Temporary backup files removed after successful upload
 
 ## Requirements
 
--   PHP ^8.4
--   Laravel ^12.2
--   `mysqldump` for database backups
--   `7z` (p7zip-full) recommended for storage backups, or PHP `zip` extension as fallback
+-   PHP `^8.4`
+-   Laravel `^12.2`
+-   `mysqldump` binary for database backups
+-   `7z` (`p7zip-full`) recommended for storage backups, or PHP `zip` extension as fallback
 
 ## Installation
 
-Install the package via composer:
+### 1. Install via Composer
 
 ```bash
 composer require devuni/notifier-package
 ```
 
-Publish the configuration file:
+### 2. Publish the configuration
 
 ```bash
-php artisan vendor:publish --provider="Devuni\Notifier\NotifierServiceProvider" --tag="config"
+php artisan vendor:publish --tag="notifier-config"
 ```
 
-Run the interactive installer to configure environment variables:
+This copies `config/notifier.php` into your application's `config/` directory.
+
+### 3. Configure environment variables
+
+Run the interactive installer to write the required values to your `.env`:
 
 ```bash
 php artisan notifier:install
 ```
 
-Verify your setup:
+### 4. Verify your setup
 
 ```bash
 php artisan notifier:check
 ```
 
+This command validates your environment variables, database connectivity, storage access, system tools (`mysqldump`, `7z`), logging channel, and backup URL reachability.
+
+---
+
 ## Configuration
 
-The configuration file will be published to `config/notifier.php`. You can configure:
-
--   Backup authentication token and upload URL
--   ZIP archive password and encryption strategy
--   Database table exclusions
--   File exclusion patterns
--   Logging channel
--   Route prefix and toggle
-
-### Configuration Options
-
-```php
-// config/notifier.php
-return [
-    // Authentication token for API requests
-    'backup_code' => env('NOTIFIER_BACKUP_CODE', env('BACKUP_CODE')),
-
-    // URL where backups will be uploaded
-    'backup_url' => env('NOTIFIER_URL', env('BACKUP_URL')),
-
-    // Password for ZIP encryption (AES-256)
-    'backup_zip_password' => env('NOTIFIER_BACKUP_PASSWORD', env('BACKUP_ZIP_PASSWORD')),
-
-    // Database tables to exclude from backup
-    'excluded_tables' => [],
-
-    // Files/directories to exclude from storage backup (relative to storage/app/public)
-    'excluded_files' => [
-        '.gitignore',
-    ],
-
-    // Logging channel (falls back to 'daily' if not found)
-    'logging_channel' => env('NOTIFIER_LOGGING_CHANNEL', 'backup'),
-
-    // Route configuration
-    'routes_enabled' => env('NOTIFIER_ROUTES_ENABLED', true),
-    'route_prefix' => env('NOTIFIER_ROUTE_PREFIX', 'api/notifier'),
-
-    // ZIP strategy: 'auto' (default), 'cli' (force 7z), 'php' (force ZipArchive)
-    'zip_strategy' => env('NOTIFIER_ZIP_STRATEGY', 'auto'),
-];
-```
+After publishing, edit `config/notifier.php` or set values via environment variables.
 
 ### Environment Variables
 
 ```bash
-# Required — authentication and upload
-NOTIFIER_BACKUP_CODE=your-secret-token
-NOTIFIER_URL=https://your-backup-server.com/api/receive-backup
-NOTIFIER_BACKUP_PASSWORD=your-strong-zip-password
+# Required
+NOTIFIER_BACKUP_CODE=your-secret-token       # Authentication token (must match the central notifier)
+NOTIFIER_URL=https://your-backup-server.com  # Endpoint that receives backup uploads
+NOTIFIER_BACKUP_PASSWORD=your-zip-password   # AES-256 ZIP encryption password
 
-# Optional — logging
-NOTIFIER_LOGGING_CHANNEL=backup
-
-# Optional — route customization
-NOTIFIER_ROUTES_ENABLED=true
-NOTIFIER_ROUTE_PREFIX=api/notifier
-
-# Optional — ZIP strategy (auto, cli, php)
-NOTIFIER_ZIP_STRATEGY=auto
+# Optional
+NOTIFIER_LOGGING_CHANNEL=backup              # Laravel logging channel (default: backup)
+NOTIFIER_ROUTES_ENABLED=true                 # Enable/disable the API route (default: true)
+NOTIFIER_ROUTE_PREFIX=api/notifier           # API route prefix (default: api/notifier)
+NOTIFIER_ZIP_STRATEGY=auto                   # ZIP strategy: auto, cli, php (default: auto)
+NOTIFIER_CHUNK_SIZE=20971520                 # Upload chunk size in bytes (default: 20 MB)
+NOTIFIER_QUEUE_CONNECTION=sync               # Queue driver for API-triggered backups (default: sync)
 ```
 
-## Usage
+### All Configuration Options
 
-### Basic Usage
+| Key | Env Variable | Default | Description |
+|-----|-------------|---------|-------------|
+| `backup_code` | `NOTIFIER_BACKUP_CODE` | — | Authentication token matched against `X-Notifier-Token` header |
+| `backup_url` | `NOTIFIER_URL` | — | Central notifier endpoint for backup uploads |
+| `backup_zip_password` | `NOTIFIER_BACKUP_PASSWORD` | — | Password used to encrypt backup ZIP archives |
+| `excluded_tables` | — | `[]` | Database tables excluded from backup (e.g. `telescope_entries`, `sessions`) |
+| `excluded_files` | — | `['.gitignore']` | Files/dirs excluded from storage backup (relative to `storage/app/public`) |
+| `logging_channel` | `NOTIFIER_LOGGING_CHANNEL` | `backup` | Laravel log channel; falls back to `daily` if channel doesn't exist |
+| `routes_enabled` | `NOTIFIER_ROUTES_ENABLED` | `true` | Whether to register the package's API route |
+| `route_prefix` | `NOTIFIER_ROUTE_PREFIX` | `api/notifier` | URL prefix for the API route |
+| `zip_strategy` | `NOTIFIER_ZIP_STRATEGY` | `auto` | ZIP strategy: `auto` (detect), `cli` (force 7z), `php` (force ZipArchive) |
+| `chunk_size` | `NOTIFIER_CHUNK_SIZE` | `20971520` | Upload chunk size in bytes. Keep under your proxy's limit (e.g. Cloudflare free: 100 MB) |
+| `queue_connection` | `NOTIFIER_QUEUE_CONNECTION` | `sync` | Queue driver for API-triggered backups. Artisan commands always run synchronously. |
 
-```php
-use Devuni\Notifier\Services\NotifierDatabaseService;
-use Devuni\Notifier\Services\NotifierStorageService;
+---
 
-// Resolve from the container (or inject via constructor)
-$databaseService = app(NotifierDatabaseService::class);
-$storageService = app(NotifierStorageService::class);
+## Artisan Commands
 
-// Create and send a database backup
-$databaseBackupPath = $databaseService->createDatabaseBackup();
-$databaseService->sendDatabaseBackup($databaseBackupPath);
+### `notifier:install`
 
-// Create and send a storage backup
-$storageBackupPath = $storageService->createStorageBackup();
-$storageService->sendStorageBackup($storageBackupPath);
-```
-
-### Artisan Commands
+Interactive wizard that writes the three required environment variables to your `.env` file.
 
 ```bash
-# Create and upload a database backup
-php artisan notifier:database-backup
-
-# Create and upload a storage backup
-php artisan notifier:storage-backup
-
-# Check package configuration and system requirements
-php artisan notifier:check
-
-# Interactive environment setup
 php artisan notifier:install
+
+# Overwrite existing values
+php artisan notifier:install --force
 ```
 
-### API Endpoint
+### `notifier:check`
 
-The package provides a REST API endpoint for triggering backups remotely:
+Validates the full environment and system requirements. Checks:
+
+- `NOTIFIER_BACKUP_CODE`, `NOTIFIER_URL`, `NOTIFIER_BACKUP_PASSWORD` are set
+- Database connection is healthy
+- `storage/app/public` is accessible
+- `mysqldump` is available on `$PATH`
+- ZIP tool is available (`7z` or PHP `zip` extension)
+- Logging channel is configured
+- Queue connection is set up
+- Backup URL is reachable over HTTPS
 
 ```bash
-# Trigger database backup
+php artisan notifier:check
+```
+
+### `notifier:database-backup`
+
+Creates a `mysqldump` of the application database and uploads it to the central notifier.
+
+```bash
+php artisan notifier:database-backup
+```
+
+### `notifier:storage-backup`
+
+Archives `storage/app/public` into an encrypted ZIP and uploads it to the central notifier.
+
+```bash
+php artisan notifier:storage-backup
+```
+
+---
+
+## API Endpoint
+
+The package registers a single POST endpoint for triggering backups remotely (e.g. from a central scheduler):
+
+```
+POST /{route_prefix}/backup
+```
+
+**Authentication:** `X-Notifier-Token` header — must match `NOTIFIER_BACKUP_CODE`.  
+**Rate limit:** 10 requests per 60 seconds.
+
+### Request
+
+| Parameter | Type | Required | Values |
+|-----------|------|----------|--------|
+| `type` | string | ✓ | `backup_database`, `backup_storage` |
+
+### Examples
+
+```bash
+# Trigger a database backup
 curl -X POST https://your-app.com/api/notifier/backup \
   -H "X-Notifier-Token: your-secret-token" \
   -d "type=backup_database"
 
-# Trigger storage backup
+# Trigger a storage backup
 curl -X POST https://your-app.com/api/notifier/backup \
   -H "X-Notifier-Token: your-secret-token" \
   -d "type=backup_storage"
 ```
 
-The endpoint is rate-limited to 5 requests per minute and requires the `X-Notifier-Token` header for authentication.
+### Response
 
-### ZIP Strategy
+**Success (synchronous):**
+```json
+{
+    "success": true,
+    "message": "Database backup completed successfully.",
+    "backup_type": "database",
+    "duration_seconds": 12.34,
+    "timestamp": "2025-01-15T10:30:45+00:00"
+}
+```
 
-The package supports two ZIP creation strategies for storage backups:
+**Success (queued):**
+```json
+{
+    "success": true,
+    "message": "Backup job dispatched to queue.",
+    "backup_type": "storage",
+    "queued": true,
+    "timestamp": "2025-01-15T10:30:45+00:00"
+}
+```
 
-| Strategy | Tool | Encryption | Memory | Best for |
-|----------|------|------------|--------|----------|
-| `cli` | 7z (p7zip-full) | AES-256 | Low (separate process) | Production servers |
-| `php` | PHP ZipArchive | AES-256 | Higher (PHP memory) | Local development |
-| `auto` | Auto-detect | AES-256 | — | Default (recommended) |
+**Error:**
+```json
+{
+    "success": false,
+    "message": "Database backup failed.",
+    "backup_type": "database",
+    "error": "mysqldump: command not found",
+    "timestamp": "2025-01-15T10:30:45+00:00"
+}
+```
 
-With `auto` (default), the package uses CLI 7z when available and falls back to PHP ZipArchive. Install 7z for best performance:
+---
+
+## ZIP Strategy
+
+Storage backups use AES-256 encryption regardless of the strategy chosen.
+
+| Strategy | Tool | Memory usage | Best for |
+|----------|------|-------------|----------|
+| `auto` *(default)* | 7z if available, else ZipArchive | — | All environments |
+| `cli` | 7z (`p7zip-full`) | Low — separate process | Production servers |
+| `php` | PHP `ZipArchive` | Higher — PHP heap | Environments without 7z |
+
+Install `7z` for best performance on Linux servers:
 
 ```bash
 sudo apt install p7zip-full
 ```
+
+---
+
+## Queue Support
+
+By default, API-triggered backups run synchronously inside the HTTP request. For large backups this may hit PHP's `max_execution_time`. Set `NOTIFIER_QUEUE_CONNECTION` to any async queue driver to offload backup jobs:
+
+```bash
+NOTIFIER_QUEUE_CONNECTION=database   # requires php artisan queue:table
+NOTIFIER_QUEUE_CONNECTION=redis      # requires phpredis or predis
+```
+
+> **Note:** Artisan commands (`notifier:database-backup`, `notifier:storage-backup`) always run synchronously and are not affected by this setting.
+
+---
+
+## Programmatic Usage
+
+The services can be resolved from the container or injected directly:
+
+```php
+use Devuni\Notifier\Services\NotifierDatabaseService;
+use Devuni\Notifier\Services\NotifierStorageService;
+
+$db = app(NotifierDatabaseService::class);
+$storage = app(NotifierStorageService::class);
+
+// Database backup
+$path = $db->createDatabaseBackup();
+$db->sendDatabaseBackup($path);
+
+// Storage backup
+$path = $storage->createStorageBackup();
+$storage->sendStorageBackup($path);
+```
+
+---
 
 ## Testing
 
 This package uses [Pest](https://pestphp.com) for testing.
 
 ```bash
-# Run all tests
-composer test
-
-# Run only unit tests
-composer test-unit
-
-# Run only feature tests
-composer test-feature
-
-# Run tests with coverage
-composer test-coverage
+composer test            # Run all tests
+composer test-unit       # Unit tests only
+composer test-feature    # Feature tests only
+composer test-coverage   # Tests with coverage report
 ```
 
 ### Test Structure
@@ -211,15 +285,17 @@ composer test-coverage
 ```
 tests/
 ├── Unit/
-│   ├── Services/         # Service class testing
-│   ├── Commands/         # Artisan command testing
-│   ├── Controllers/      # API controller testing
+│   ├── Commands/         # Artisan command tests
+│   ├── Controllers/      # API controller tests
+│   ├── Services/         # Service class tests
 │   └── NotifierServiceProviderTest.php
 └── Feature/
-    ├── NotifierPackageTest.php     # Core integration tests
-    ├── PackageInstallationTest.php # Installation testing
-    └── BackupWorkflowTest.php      # End-to-end workflows
+    ├── BackupWorkflowTest.php
+    ├── NotifierPackageTest.php
+    └── PackageInstallationTest.php
 ```
+
+---
 
 ## Changelog
 
