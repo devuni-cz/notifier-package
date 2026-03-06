@@ -60,7 +60,7 @@ trait DisplayHelper
     {
         $version = $this->getCurrentVersion();
 
-        note(" devuni/notifier-package {$this->displayBadge(" v{$version} ")}");
+        note(" devuni/notifier-package {$this->displayBadge(" {$version} ")}");
     }
 
     protected function displayOutro(string $text, string $link = '', int $terminalWidth = 80): void
