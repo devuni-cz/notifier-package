@@ -65,9 +65,9 @@ describe('NotifierCheckCommand', function () {
             ]);
 
             $this->artisan('notifier:check')
-                ->expectsOutputToContain('BACKUP_CODE:')
-                ->expectsOutputToContain('BACKUP_URL:')
-                ->expectsOutputToContain('BACKUP_ZIP_PASSWORD:');
+                ->expectsOutputToContain('NOTIFIER_BACKUP_CODE:')
+                ->expectsOutputToContain('NOTIFIER_URL:')
+                ->expectsOutputToContain('NOTIFIER_BACKUP_PASSWORD:');
         });
     });
 
