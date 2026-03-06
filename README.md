@@ -3,6 +3,11 @@
 [![Latest Version on Packagist](https://img.shields.io/packagist/v/devuni/notifier-package.svg?style=flat-square)](https://packagist.org/packages/devuni/notifier-package)
 [![Total Downloads](https://img.shields.io/packagist/dt/devuni/notifier-package.svg?style=flat-square)](https://packagist.org/packages/devuni/notifier-package)
 [![Tests](https://github.com/devuni-cz/notifier-package/actions/workflows/tests.yml/badge.svg)](https://github.com/devuni-cz/notifier-package/actions/workflows/tests.yml)
+[![PHP 8.4](https://img.shields.io/badge/PHP-8.4-777BB4?style=flat-square&logo=php&logoColor=white)](https://www.php.net)
+[![Laravel 12](https://img.shields.io/badge/Laravel-12-FF2D20?style=flat-square&logo=laravel&logoColor=white)](https://laravel.com)
+[![PHPStan Level 5](https://img.shields.io/badge/PHPStan-level%205-blue?style=flat-square)](https://phpstan.org)
+[![Code Style](https://img.shields.io/badge/code%20style-pint-orange?style=flat-square)](https://laravel.com/docs/pint)
+[![License: MIT](https://img.shields.io/badge/license-MIT-green?style=flat-square)](LICENSE.md)
 
 A Laravel package for automated, encrypted database and storage backups with secure remote delivery. Supports Artisan commands, HTTP API triggers, queue offloading, and AES-256 ZIP encryption out of the box.
 
