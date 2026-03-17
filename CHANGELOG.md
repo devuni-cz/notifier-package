@@ -5,6 +5,12 @@ All notable changes to `devuni/notifier-package` will be documented in this file
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.5.0] - 2026-03-17
+
+### Added
+-   Laravel 13 support — all `illuminate/*` constraints now accept `^12.55.0 || ^13.0`
+-   `orchestra/testbench` constraint updated to `^11.0.0 || ^12.0` for Laravel 13 test compatibility
+
 ## [2.4.2] - 2026-03-06
 
 ### Fixed
@@ -370,7 +376,9 @@ NOTIFIER_LOGGING_CHANNEL=backup
 -   GitHub Actions CI/CD
 -   Documentation and examples
 
-[Unreleased]: https://github.com/devuni-cz/notifier-package/compare/v2.2.4...HEAD
+[Unreleased]: https://github.com/devuni-cz/notifier-package/compare/v2.5.0...HEAD
+[2.5.0]: https://github.com/devuni-cz/notifier-package/compare/v2.4.3...v2.5.0
+[2.4.3]: https://github.com/devuni-cz/notifier-package/compare/v2.4.2...v2.4.3
 [2.2.4]: https://github.com/devuni-cz/notifier-package/compare/v2.2.3...v2.2.4
 [2.2.3]: https://github.com/devuni-cz/notifier-package/compare/v2.2.2...v2.2.3
 [2.1.1]: https://github.com/devuni-cz/notifier-package/compare/v2.1.0...v2.1.1
