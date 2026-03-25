@@ -18,6 +18,7 @@ final class NotifierSendBackupController
     public function __construct(
         private readonly NotifierDatabaseService $databaseService,
         private readonly NotifierStorageService $storageService,
+        private readonly NotifierLogger $notifierLogger,
     ) {}
 
     public function __invoke(BackupRequest $request): JsonResponse
@@ -37,7 +38,7 @@ final class NotifierSendBackupController
         ProcessBackupJob::dispatch($backupType)
             ->onConnection(config('notifier.queue_connection'));
 
-        NotifierLogger::get()->info('📨 backup job dispatched to queue', [
+        $this->notifierLogger->get()->info('📨 backup job dispatched to queue', [
             'backup_type' => $backupType->value,
         ]);
 
@@ -68,7 +69,7 @@ final class NotifierSendBackupController
                 'timestamp' => now()->toIso8601String(),
             ]);
         } catch (Throwable $e) {
-            NotifierLogger::get()->error('Database backup failed.', [
+            $this->notifierLogger->get()->error('Database backup failed.', [
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
             ]);
@@ -101,7 +102,7 @@ final class NotifierSendBackupController
                 'timestamp' => now()->toIso8601String(),
             ]);
         } catch (Throwable $e) {
-            NotifierLogger::get()->error('Storage backup failed.', [
+            $this->notifierLogger->get()->error('Storage backup failed.', [
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
             ]);

@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Devuni\Notifier\Services;
 
 use Carbon\Carbon;
+use Devuni\Notifier\Contracts\ZipCreator;
 use Devuni\Notifier\Enums\BackupTypeEnum;
-use Devuni\Notifier\Services\Zip\ZipManager;
 use Devuni\Notifier\Support\NotifierLogger;
 use Illuminate\Support\Facades\File;
 use RuntimeException;
@@ -17,11 +17,15 @@ final class NotifierDatabaseService
 {
     public function __construct(
         private readonly ChunkedUploadService $uploadService,
+        private readonly ZipCreator $zipCreator,
+        private readonly NotifierLogger $notifierLogger,
     ) {}
 
     public function createDatabaseBackup(): string
     {
-        NotifierLogger::get()->info('⚙️ STARTING NEW BACKUP ⚙️');
+        $logger = $this->notifierLogger->get();
+
+        $logger->info('⚙️ STARTING NEW BACKUP ⚙️');
 
         $backupDirectory = storage_path('app/private');
         File::ensureDirectoryExists($backupDirectory);
@@ -29,7 +33,7 @@ final class NotifierDatabaseService
         $filename = 'backup-'.Carbon::now()->format('Y-m-d_H-i-s').'.sql';
         $path = $backupDirectory.'/'.$filename;
 
-        NotifierLogger::get()->info('➡️ creating backup file');
+        $logger->info('➡️ creating backup file');
 
         $config = config('database.connections.mysql');
         $excludedTables = config('notifier.excluded_tables', []);
@@ -57,7 +61,7 @@ final class NotifierDatabaseService
         $process->run();
 
         if (! $process->isSuccessful()) {
-            NotifierLogger::get()->error('❌ mysqldump failed', [
+            $logger->error('❌ mysqldump failed', [
                 'exitCode' => $process->getExitCode(),
                 'error' => $process->getErrorOutput(),
             ]);
@@ -71,11 +75,10 @@ final class NotifierDatabaseService
         if (! empty($password)) {
             $zipPath = $backupDirectory.'/backup-'.Carbon::now()->format('Y-m-d_H-i-s').'.zip';
 
-            $zipCreator = ZipManager::resolve();
-            $zipCreator->create($path, $zipPath, $password, []);
+            $this->zipCreator->create($path, $zipPath, $password, []);
 
             File::delete($path);
-            NotifierLogger::get()->info('➡️ SQL dump encrypted into ZIP archive');
+            $logger->info('➡️ SQL dump encrypted into ZIP archive');
 
             return $zipPath;
         }
@@ -85,15 +88,17 @@ final class NotifierDatabaseService
 
     public function sendDatabaseBackup(string $path): void
     {
-        NotifierLogger::get()->info('➡️ preparing file for sending');
+        $logger = $this->notifierLogger->get();
+
+        $logger->info('➡️ preparing file for sending');
 
         try {
             $this->uploadService->upload($path, BackupTypeEnum::Database->value);
 
-            NotifierLogger::get()->info('➡️ file was sent');
-            NotifierLogger::get()->info('✅ END OF BACKUP');
+            $logger->info('➡️ file was sent');
+            $logger->info('✅ END OF BACKUP');
         } catch (Throwable $th) {
-            NotifierLogger::get()->emergency('❌ an error occurred while uploading a file', [
+            $logger->emergency('❌ an error occurred while uploading a file', [
                 'error' => $th->getMessage(),
                 'file_size' => filesize($path),
                 'php_file_upload_limit' => ini_get('upload_max_filesize'),
@@ -105,7 +110,7 @@ final class NotifierDatabaseService
             throw $th;
         } finally {
             File::delete($path);
-            NotifierLogger::get()->info('➡️ backup file cleaned up');
+            $logger->info('➡️ backup file cleaned up');
         }
     }
 }

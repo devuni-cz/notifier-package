@@ -6,33 +6,31 @@ use Devuni\Notifier\Support\NotifierLogger;
 use Psr\Log\LoggerInterface;
 
 it('returns a LoggerInterface instance', function (): void {
-    $logger = NotifierLogger::get();
+    $notifierLogger = new NotifierLogger;
 
-    expect($logger)->toBeInstanceOf(LoggerInterface::class);
+    expect($notifierLogger->get())->toBeInstanceOf(LoggerInterface::class);
 });
 
 it('uses backup channel when it exists', function (): void {
-    // Configure the backup channel
     config()->set('logging.channels.backup', [
         'driver' => 'single',
         'path' => storage_path('logs/backup.log'),
     ]);
-    config()->set('notifier.logging_channel', 'backup');
 
-    $logger = NotifierLogger::get();
+    $notifierLogger = new NotifierLogger('backup');
 
-    expect($logger)->toBeInstanceOf(LoggerInterface::class);
+    expect($notifierLogger->get())->toBeInstanceOf(LoggerInterface::class);
+    expect($notifierLogger->isUsingPreferredChannel())->toBeTrue();
 });
 
 it('falls back to default channel when configured channel does not exist', function (): void {
-    // Ensure backup channel doesn't exist
     config()->set('logging.channels.backup', null);
-    config()->set('notifier.logging_channel', 'backup');
     config()->set('logging.default', 'single');
 
-    $logger = NotifierLogger::get();
+    $notifierLogger = new NotifierLogger('backup');
 
-    expect($logger)->toBeInstanceOf(LoggerInterface::class);
+    expect($notifierLogger->get())->toBeInstanceOf(LoggerInterface::class);
+    expect($notifierLogger->isUsingPreferredChannel())->toBeFalse();
 });
 
 it('respects custom logging channel from config', function (): void {
@@ -40,9 +38,10 @@ it('respects custom logging channel from config', function (): void {
         'driver' => 'single',
         'path' => storage_path('logs/custom.log'),
     ]);
-    config()->set('notifier.logging_channel', 'custom_channel');
 
-    $logger = NotifierLogger::get();
+    $notifierLogger = new NotifierLogger('custom_channel');
 
-    expect($logger)->toBeInstanceOf(LoggerInterface::class);
+    expect($notifierLogger->get())->toBeInstanceOf(LoggerInterface::class);
+    expect($notifierLogger->getPreferredChannel())->toBe('custom_channel');
+    expect($notifierLogger->isUsingPreferredChannel())->toBeTrue();
 });

@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Devuni\Notifier\Services;
 
 use Carbon\Carbon;
+use Devuni\Notifier\Contracts\ZipCreator;
 use Devuni\Notifier\Enums\BackupTypeEnum;
-use Devuni\Notifier\Services\Zip\ZipManager;
 use Devuni\Notifier\Support\NotifierLogger;
 use Illuminate\Support\Facades\File;
 use RuntimeException;
@@ -16,11 +16,15 @@ final class NotifierStorageService
 {
     public function __construct(
         private readonly ChunkedUploadService $uploadService,
+        private readonly ZipCreator $zipCreator,
+        private readonly NotifierLogger $notifierLogger,
     ) {}
 
     public function createStorageBackup(): string
     {
-        NotifierLogger::get()->info('⚙️ STARTING NEW BACKUP ⚙️');
+        $logger = $this->notifierLogger->get();
+
+        $logger->info('⚙️ STARTING NEW BACKUP ⚙️');
 
         $backupDirectory = storage_path('app/private');
         File::ensureDirectoryExists($backupDirectory);
@@ -28,7 +32,7 @@ final class NotifierStorageService
         $filename = 'backup-'.Carbon::now()->format('Y-m-d_H-i-s').'.zip';
         $path = $backupDirectory.'/'.$filename;
 
-        NotifierLogger::get()->info('➡️ creating backup file');
+        $logger->info('➡️ creating backup file');
 
         $sourcePath = storage_path('app/public');
 
@@ -52,25 +56,26 @@ final class NotifierStorageService
         $password = config('notifier.backup_zip_password');
         $excludedFiles = config('notifier.excluded_files', []);
 
-        $zipCreator = ZipManager::resolve();
-        $fileCount = $zipCreator->create($source, $path, $password, $excludedFiles);
+        $fileCount = $this->zipCreator->create($source, $path, $password, $excludedFiles);
 
-        NotifierLogger::get()->info("✅ backup archive created ({$fileCount} files): {$path}");
+        $logger->info("✅ backup archive created ({$fileCount} files): {$path}");
 
         return $path;
     }
 
     public function sendStorageBackup(string $path): void
     {
-        NotifierLogger::get()->info('➡️ preparing file for sending');
+        $logger = $this->notifierLogger->get();
+
+        $logger->info('➡️ preparing file for sending');
 
         try {
             $this->uploadService->upload($path, BackupTypeEnum::Storage->value);
 
-            NotifierLogger::get()->info('➡️ file was sent');
-            NotifierLogger::get()->info('✅ END OF BACKUP');
+            $logger->info('➡️ file was sent');
+            $logger->info('✅ END OF BACKUP');
         } catch (Throwable $th) {
-            NotifierLogger::get()->emergency('❌ an error occurred while uploading a file', [
+            $logger->emergency('❌ an error occurred while uploading a file', [
                 'error' => $th->getMessage(),
                 'file_size' => filesize($path),
                 'php_file_upload_limit' => ini_get('upload_max_filesize'),
@@ -82,7 +87,7 @@ final class NotifierStorageService
             throw $th;
         } finally {
             File::delete($path);
-            NotifierLogger::get()->info('➡️ backup file cleaned up');
+            $logger->info('➡️ backup file cleaned up');
         }
     }
 }

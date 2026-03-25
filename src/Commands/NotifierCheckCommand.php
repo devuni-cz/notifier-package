@@ -25,7 +25,7 @@ final class NotifierCheckCommand extends Command
 
     private bool $hasErrors = false;
 
-    public function handle(NotifierConfigService $configService): int
+    public function handle(NotifierConfigService $configService, NotifierLogger $notifierLogger): int
     {
         $this->displayNotifierHeader('Health Check');
 
@@ -34,7 +34,7 @@ final class NotifierCheckCommand extends Command
         $this->checkStorageDirectories();
         $this->checkMysqldumpAvailability();
         $this->checkZipAvailability();
-        $this->checkLoggingChannel();
+        $this->checkLoggingChannel($notifierLogger);
         $this->checkQueueConfiguration();
         $this->checkBackupUrlReachability();
 
@@ -217,13 +217,13 @@ final class NotifierCheckCommand extends Command
     /**
      * Check if the preferred logging channel is configured.
      */
-    private function checkLoggingChannel(): void
+    private function checkLoggingChannel(NotifierLogger $notifierLogger): void
     {
         $this->line('<fg=yellow;options=bold>🔍 Checking logging channel...</>');
 
-        $preferredChannel = NotifierLogger::getPreferredChannel();
+        $preferredChannel = $notifierLogger->getPreferredChannel();
 
-        if (NotifierLogger::isUsingPreferredChannel()) {
+        if ($notifierLogger->isUsingPreferredChannel()) {
             $this->line("   <fg=green>✓</> Logging channel '<fg=cyan>{$preferredChannel}</>' is configured");
         } else {
             $this->line("   <fg=yellow>⚠</> Logging channel '<fg=cyan>{$preferredChannel}</>' not found, using '<fg=cyan>daily</>' fallback");

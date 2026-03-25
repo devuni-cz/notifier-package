@@ -9,29 +9,35 @@ use Psr\Log\LoggerInterface;
 
 final class NotifierLogger
 {
-    public static function get(): LoggerInterface
-    {
-        $preferredChannel = self::getPreferredChannel();
+    private readonly LoggerInterface $logger;
 
-        return self::hasChannel($preferredChannel)
-            ? Log::channel($preferredChannel)
+    public function __construct(
+        private readonly string $preferredChannel = 'backup',
+    ) {
+        $this->logger = $this->hasChannel($this->preferredChannel)
+            ? Log::channel($this->preferredChannel)
             : Log::channel('daily');
     }
 
-    public static function hasChannel(?string $channel = null): bool
+    public function get(): LoggerInterface
     {
-        $channel ??= self::getPreferredChannel();
+        return $this->logger;
+    }
+
+    public function hasChannel(?string $channel = null): bool
+    {
+        $channel ??= $this->preferredChannel;
 
         return config("logging.channels.$channel") !== null;
     }
 
-    public static function getPreferredChannel(): string
+    public function getPreferredChannel(): string
     {
-        return config('notifier.logging_channel', 'backup');
+        return $this->preferredChannel;
     }
 
-    public static function isUsingPreferredChannel(): bool
+    public function isUsingPreferredChannel(): bool
     {
-        return self::hasChannel(self::getPreferredChannel());
+        return $this->hasChannel($this->preferredChannel);
     }
 }

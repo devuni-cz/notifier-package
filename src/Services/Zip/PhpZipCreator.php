@@ -14,6 +14,10 @@ use ZipArchive;
 
 final class PhpZipCreator implements ZipCreator
 {
+    public function __construct(
+        private readonly NotifierLogger $notifierLogger,
+    ) {}
+
     public static function isAvailable(): bool
     {
         return extension_loaded('zip');
@@ -21,7 +25,9 @@ final class PhpZipCreator implements ZipCreator
 
     public function create(string $sourcePath, string $zipPath, string $password, array $excludedFiles = []): int
     {
-        NotifierLogger::get()->info('➡️ using PHP ZipArchive fallback for ZIP creation');
+        $logger = $this->notifierLogger->get();
+
+        $logger->info('➡️ using PHP ZipArchive fallback for ZIP creation');
 
         $zip = new ZipArchive;
 
@@ -34,7 +40,7 @@ final class PhpZipCreator implements ZipCreator
         // Handle single file (e.g. SQL dump) vs directory
         if (is_file($sourcePath)) {
             $entryName = basename($sourcePath);
-            NotifierLogger::get()->info('➡️ adding file: '.$sourcePath);
+            $logger->info('➡️ adding file: '.$sourcePath);
             $zip->addFile($sourcePath, $entryName);
             $zip->setEncryptionName($entryName, ZipArchive::EM_AES_256);
             $zip->close();
@@ -58,7 +64,7 @@ final class PhpZipCreator implements ZipCreator
             $filePath = $file->getRealPath();
 
             if ($filePath === false) {
-                NotifierLogger::get()->warning('➡️ skipping file with invalid path: '.$file->getPathname());
+                $logger->warning('➡️ skipping file with invalid path: '.$file->getPathname());
 
                 continue;
             }
@@ -66,18 +72,18 @@ final class PhpZipCreator implements ZipCreator
             $relativePath = mb_substr($filePath, mb_strlen($sourcePath) + 1);
 
             if (empty($relativePath)) {
-                NotifierLogger::get()->warning('➡️ skipping file with empty relative path: '.$filePath);
+                $logger->warning('➡️ skipping file with empty relative path: '.$filePath);
 
                 continue;
             }
 
             if ($this->isExcluded($relativePath, $excludedFiles)) {
-                NotifierLogger::get()->info('➡️ skipping excluded file: '.$relativePath);
+                $logger->info('➡️ skipping excluded file: '.$relativePath);
 
                 continue;
             }
 
-            NotifierLogger::get()->info('➡️ adding file: '.$filePath);
+            $logger->info('➡️ adding file: '.$filePath);
 
             $zip->addFile($filePath, $relativePath);
             $zip->setEncryptionName($relativePath, ZipArchive::EM_AES_256);

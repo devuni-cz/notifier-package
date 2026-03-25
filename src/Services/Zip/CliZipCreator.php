@@ -12,6 +12,10 @@ use Symfony\Component\Process\Process;
 
 final class CliZipCreator implements ZipCreator
 {
+    public function __construct(
+        private readonly NotifierLogger $notifierLogger,
+    ) {}
+
     public static function isAvailable(): bool
     {
         $process = new Process(['7z', '--help']);
@@ -22,7 +26,9 @@ final class CliZipCreator implements ZipCreator
 
     public function create(string $sourcePath, string $zipPath, string $password, array $excludedFiles = []): int
     {
-        NotifierLogger::get()->info('➡️ using CLI 7z strategy for ZIP creation');
+        $logger = $this->notifierLogger->get();
+
+        $logger->info('➡️ using CLI 7z strategy for ZIP creation');
 
         // Remove stale archive for idempotency
         if (file_exists($zipPath)) {

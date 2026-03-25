@@ -11,6 +11,10 @@ use Throwable;
 
 final class ChunkedUploadService
 {
+    public function __construct(
+        private readonly NotifierLogger $notifierLogger,
+    ) {}
+
     /**
      * Upload a file using the chunked upload protocol.
      *
@@ -20,6 +24,8 @@ final class ChunkedUploadService
      */
     public function upload(string $path, string $backupType): void
     {
+        $logger = $this->notifierLogger->get();
+
         $baseUrl = config('notifier.backup_url');
 
         if (! str_starts_with($baseUrl, 'https://')) {
@@ -43,7 +49,7 @@ final class ChunkedUploadService
         $totalChunks = (int) ceil($fileSize / $chunkSize);
         $filename = basename($path);
 
-        NotifierLogger::get()->info('📦 starting chunked upload', [
+        $logger->info('📦 starting chunked upload', [
             'file' => $filename,
             'size' => $fileSize,
             'chunks' => $totalChunks,
@@ -53,7 +59,7 @@ final class ChunkedUploadService
         // Phase 1: Init upload
         $uploadId = $this->initUpload($baseUrl, $token, $backupType, $filename, $fileSize, $totalChunks, $checksum);
 
-        NotifierLogger::get()->info('✅ upload initialized', ['upload_id' => $uploadId]);
+        $logger->info('✅ upload initialized', ['upload_id' => $uploadId]);
 
         // Phase 2: Send chunks (streamed to temp files to avoid memory exhaustion)
         $handle = fopen($path, 'rb');
@@ -91,7 +97,7 @@ final class ChunkedUploadService
                     @unlink($tmpPath);
                 }
 
-                NotifierLogger::get()->info("➡️ chunk {$chunkNumber}/{$totalChunks} sent");
+                $logger->info("➡️ chunk {$chunkNumber}/{$totalChunks} sent");
             }
         } finally {
             fclose($handle);
@@ -100,7 +106,7 @@ final class ChunkedUploadService
         // Phase 3: Finalize
         $this->finalizeUpload($baseUrl, $token, $uploadId);
 
-        NotifierLogger::get()->info('✅ chunked upload finalized');
+        $logger->info('✅ chunked upload finalized');
     }
 
     private function initUpload(
@@ -146,6 +152,7 @@ final class ChunkedUploadService
         int $maxAttempts = 3,
         int $retryDelayMs = 2000,
     ): void {
+        $logger = $this->notifierLogger->get();
         $lastException = null;
         $url = mb_rtrim($baseUrl, '/').'/uploads/'.$uploadId.'/chunks/'.$chunkNumber;
         $chunkChecksum = hash_file('sha256', $chunkPath);
@@ -196,7 +203,7 @@ final class ChunkedUploadService
             }
 
             if ($attempt < $maxAttempts) {
-                NotifierLogger::get()->warning("⚠️ chunk {$chunkNumber} attempt {$attempt} failed, retrying...", [
+                $logger->warning("⚠️ chunk {$chunkNumber} attempt {$attempt} failed, retrying...", [
                     'error' => $lastException->getMessage(),
                 ]);
                 usleep($retryDelayMs * 1000);

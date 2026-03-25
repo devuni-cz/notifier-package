@@ -17,7 +17,10 @@ use Throwable;
 
 final class ProcessBackupJob implements ShouldQueue
 {
-    use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
+    use Dispatchable;
+    use InteractsWithQueue;
+    use Queueable;
+    use SerializesModels;
 
     /**
      * The number of seconds the job can run before timing out.
@@ -37,10 +40,12 @@ final class ProcessBackupJob implements ShouldQueue
     public function handle(
         NotifierDatabaseService $databaseService,
         NotifierStorageService $storageService,
+        NotifierLogger $notifierLogger,
     ): void {
+        $logger = $notifierLogger->get();
         $startTime = microtime(true);
 
-        NotifierLogger::get()->info('🚀 backup job started', [
+        $logger->info('🚀 backup job started', [
             'backup_type' => $this->backupType->value,
         ]);
 
@@ -51,7 +56,7 @@ final class ProcessBackupJob implements ShouldQueue
 
         $duration = round(microtime(true) - $startTime, 2);
 
-        NotifierLogger::get()->info('✅ backup job completed', [
+        $logger->info('✅ backup job completed', [
             'backup_type' => $this->backupType->value,
             'duration_seconds' => $duration,
         ]);
@@ -59,7 +64,9 @@ final class ProcessBackupJob implements ShouldQueue
 
     public function failed(Throwable $exception): void
     {
-        NotifierLogger::get()->error('❌ backup job failed', [
+        // failed() is called by the framework — resolve logger from container
+        $notifierLogger = app(NotifierLogger::class);
+        $notifierLogger->get()->error('❌ backup job failed', [
             'backup_type' => $this->backupType->value,
             'error' => $exception->getMessage(),
             'trace' => $exception->getTraceAsString(),
