@@ -69,6 +69,20 @@ final class NotifierStorageService
 
         $logger->info('➡️ preparing file for sending');
 
+        $size = filesize($path);
+
+        if ($size === false || $size < 100) {
+            $logger->warning('⚠️ backup archive is empty or too small, skipping upload', [
+                'file_size' => $size,
+                'path' => $path,
+            ]);
+
+            File::delete($path);
+            $logger->info('➡️ backup file cleaned up');
+
+            return;
+        }
+
         try {
             $this->uploadService->upload($path, BackupTypeEnum::Storage->value);
 

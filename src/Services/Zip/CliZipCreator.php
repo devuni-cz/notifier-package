@@ -45,8 +45,6 @@ final class CliZipCreator implements ZipCreator
             '-tzip',
             '-mem=AES256',
             '-p'.$password,
-            '-bso0', // suppress standard output
-            '-bsp0', // suppress progress
             $zipPath,
             $target,
         ];
@@ -64,11 +62,21 @@ final class CliZipCreator implements ZipCreator
         $process->run();
 
         if (! $process->isSuccessful()) {
-            throw new RuntimeException('CLI zip (7z) failed: '.$process->getErrorOutput());
+            throw new RuntimeException(
+                'CLI zip (7z) failed (exit code '.$process->getExitCode().'): '
+                .$process->getErrorOutput()
+            );
         }
 
         if (! file_exists($zipPath)) {
-            throw new RuntimeException('ZIP file was not created at: '.$zipPath);
+            throw new RuntimeException(
+                'ZIP file was not created at: '.$zipPath
+                .'. 7z stdout: '.($process->getOutput() ?: '(empty)')
+                .'. 7z stderr: '.($process->getErrorOutput() ?: '(empty)')
+                .'. Source: '.$sourcePath
+                .'. Source exists: '.(file_exists($sourcePath) ? 'yes' : 'no')
+                .'. Source size: '.(file_exists($sourcePath) ? (string) filesize($sourcePath) : 'N/A')
+            );
         }
 
         chmod($zipPath, 0600);

@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Devuni\Notifier\Services;
 
 use Devuni\Notifier\Support\NotifierLogger;
+use GuzzleHttp\Promise\PromiseInterface;
+use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\Http;
 use RuntimeException;
 use Throwable;
@@ -130,7 +132,7 @@ final class ChunkedUploadService
 
         if (! $response->successful()) {
             throw new RuntimeException(
-                'Failed to initialize upload: HTTP '.$response->status().' — '.$response->body()
+                'Failed to initialize upload: HTTP '.$response->status().' — '.$this->formatErrorResponse($response)
             );
         }
 
@@ -189,11 +191,11 @@ final class ChunkedUploadService
                 } elseif ($response->status() >= 400 && $response->status() < 500) {
                     // Don't retry other 4xx errors (client mistakes)
                     throw new RuntimeException(
-                        "Chunk {$chunkNumber} rejected: HTTP ".$response->status().' — '.$response->body()
+                        "Chunk {$chunkNumber} rejected: HTTP ".$response->status().' — '.$this->formatErrorResponse($response)
                     );
                 } else {
                     $lastException = new RuntimeException(
-                        "Chunk {$chunkNumber} failed: HTTP ".$response->status().' — '.$response->body()
+                        "Chunk {$chunkNumber} failed: HTTP ".$response->status().' — '.$this->formatErrorResponse($response)
                     );
                 }
             } catch (RuntimeException $e) {
@@ -221,8 +223,39 @@ final class ChunkedUploadService
 
         if (! $response->successful()) {
             throw new RuntimeException(
-                'Failed to finalize upload: HTTP '.$response->status().' — '.$response->body()
+                'Failed to finalize upload: HTTP '.$response->status().' — '.$this->formatErrorResponse($response)
             );
         }
+    }
+
+    /**
+     * Extract a meaningful error detail from the server response.
+     *
+     * Laravel APIs typically return JSON with "message" and/or "errors" keys.
+     * Falls back to raw body if the response is not JSON.
+     */
+    private function formatErrorResponse(Response|PromiseInterface $response): string
+    {
+        $json = $response->json();
+
+        if (is_array($json)) {
+            if (isset($json['message']) && is_string($json['message'])) {
+                $detail = $json['message'];
+
+                if (isset($json['errors']) && is_array($json['errors'])) {
+                    $detail .= ' '.json_encode($json['errors'], JSON_UNESCAPED_UNICODE);
+                }
+
+                return $detail;
+            }
+
+            if (isset($json['errors']) && is_array($json['errors'])) {
+                return json_encode($json['errors'], JSON_UNESCAPED_UNICODE);
+            }
+        }
+
+        $body = $response->body();
+
+        return $body !== '' ? $body : '(empty response)';
     }
 }

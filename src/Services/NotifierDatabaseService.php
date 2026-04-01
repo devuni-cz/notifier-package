@@ -69,6 +69,30 @@ final class NotifierDatabaseService
             throw new RuntimeException('Database backup failed: '.$process->getErrorOutput());
         }
 
+        // Validate the SQL dump before proceeding
+        if (! file_exists($path)) {
+            throw new RuntimeException(
+                'SQL dump file was not created at: '.$path
+                .'. mysqldump reported success but the file does not exist.'
+            );
+        }
+
+        $dumpSize = filesize($path);
+
+        if ($dumpSize === false || $dumpSize === 0) {
+            File::delete($path);
+
+            throw new RuntimeException(
+                'SQL dump file is empty at: '.$path
+                .'. The database may be empty or mysqldump produced no output.'
+            );
+        }
+
+        $logger->info('✅ SQL dump created', [
+            'path' => $path,
+            'size' => $dumpSize,
+        ]);
+
         // Encrypt the SQL dump into a password-protected ZIP
         $password = config('notifier.backup_zip_password');
 
