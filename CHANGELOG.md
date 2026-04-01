@@ -5,6 +5,17 @@ All notable changes to `devuni/notifier-package` will be documented in this file
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.6.1] - 2026-04-01
+
+### Fixed
+
+-   Fixed empty storage backup being sent to server — added early-exit validation that skips upload when ZIP archive is empty or too small (< 100 bytes)
+-   Fixed missing backup file cleanup when empty archive is detected — file is now properly deleted before early return
+-   Fixed missing diagnostics in `CliZipCreator` when 7z reports success but ZIP file is not created — error now includes 7z stdout, stderr, source path, existence, and size
+-   Removed `-bso0` and `-bsp0` flags from 7z command to allow output capture for debugging
+-   Added SQL dump validation in `NotifierDatabaseService` — verifies dump file exists and is non-empty before attempting ZIP encryption
+-   Fixed empty error messages from server responses (`HTTP 422 —`) — `ChunkedUploadService` now parses JSON `message` and `errors` fields from server response for actionable diagnostics
+
 ## [2.6.0] - 2026-03-25
 
 ### Changed
@@ -394,7 +405,8 @@ NOTIFIER_LOGGING_CHANNEL=backup
 -   GitHub Actions CI/CD
 -   Documentation and examples
 
-[Unreleased]: https://github.com/devuni-cz/notifier-package/compare/v2.6.0...HEAD
+[Unreleased]: https://github.com/devuni-cz/notifier-package/compare/v2.6.1...HEAD
+[2.6.1]: https://github.com/devuni-cz/notifier-package/compare/v2.6.0...v2.6.1
 [2.6.0]: https://github.com/devuni-cz/notifier-package/compare/v2.5.0...v2.6.0
 [2.5.0]: https://github.com/devuni-cz/notifier-package/compare/v2.4.3...v2.5.0
 [2.4.3]: https://github.com/devuni-cz/notifier-package/compare/v2.4.2...v2.4.3
