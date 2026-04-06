@@ -37,6 +37,12 @@ final class CliZipCreator implements ZipCreator
 
         // Handle single file (e.g. SQL dump) vs directory
         $isFile = is_file($sourcePath);
+
+        // Early check: if source is a directory, verify it has files to archive
+        if (! $isFile && $this->isDirectoryEmpty($sourcePath, $excludedFiles)) {
+            throw new RuntimeException('No files to backup in the source directory: '.$sourcePath);
+        }
+
         $cwd = $isFile ? dirname($sourcePath) : $sourcePath;
         $target = $isFile ? basename($sourcePath) : '.';
 
@@ -83,6 +89,37 @@ final class CliZipCreator implements ZipCreator
 
         // Count archived files via 7z list
         return $this->countFiles($zipPath, $password);
+    }
+
+    private function isDirectoryEmpty(string $directory, array $excludedFiles): bool
+    {
+        $iterator = new \RecursiveIteratorIterator(
+            new \RecursiveDirectoryIterator($directory, \RecursiveDirectoryIterator::SKIP_DOTS),
+            \RecursiveIteratorIterator::SELF_FIRST
+        );
+
+        foreach ($iterator as $file) {
+            if ($file->isDir()) {
+                continue;
+            }
+
+            $relativePath = mb_substr($file->getPathname(), mb_strlen($directory) + 1);
+
+            $excluded = false;
+            foreach ($excludedFiles as $skip) {
+                $skip = mb_ltrim($skip, '/');
+                if ($relativePath === $skip || str_starts_with($relativePath, $skip.'/')) {
+                    $excluded = true;
+                    break;
+                }
+            }
+
+            if (! $excluded) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     private function countFiles(string $zipPath, string $password): int

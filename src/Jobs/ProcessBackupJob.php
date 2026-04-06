@@ -82,6 +82,11 @@ final class ProcessBackupJob implements ShouldQueue
     private function backupStorage(NotifierStorageService $service): void
     {
         $path = $service->createStorageBackup();
+
+        if ($path === '') {
+            return;
+        }
+
         $service->sendStorageBackup($path);
     }
 }

@@ -5,6 +5,15 @@ All notable changes to `devuni/notifier-package` will be documented in this file
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.6.2] - 2026-04-06
+
+### Fixed
+
+-   Fixed `CliZipCreator` silently failing when storage directory is empty — 7z returns exit code 0 but creates no ZIP file, causing `RuntimeException`
+-   Added `isDirectoryEmpty()` pre-check in `CliZipCreator` to detect empty source directories (respecting excluded files) before invoking 7z
+-   `NotifierStorageService` now gracefully skips backup when no files are available instead of failing the job
+-   `ProcessBackupJob` now handles empty backup path from storage service without attempting upload
+
 ## [2.6.1] - 2026-04-01
 
 ### Fixed
@@ -405,7 +414,8 @@ NOTIFIER_LOGGING_CHANNEL=backup
 -   GitHub Actions CI/CD
 -   Documentation and examples
 
-[Unreleased]: https://github.com/devuni-cz/notifier-package/compare/v2.6.1...HEAD
+[Unreleased]: https://github.com/devuni-cz/notifier-package/compare/v2.6.2...HEAD
+[2.6.2]: https://github.com/devuni-cz/notifier-package/compare/v2.6.1...v2.6.2
 [2.6.1]: https://github.com/devuni-cz/notifier-package/compare/v2.6.0...v2.6.1
 [2.6.0]: https://github.com/devuni-cz/notifier-package/compare/v2.5.0...v2.6.0
 [2.5.0]: https://github.com/devuni-cz/notifier-package/compare/v2.4.3...v2.5.0

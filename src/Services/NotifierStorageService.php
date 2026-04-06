@@ -56,7 +56,19 @@ final class NotifierStorageService
         $password = config('notifier.backup_zip_password');
         $excludedFiles = config('notifier.excluded_files', []);
 
-        $fileCount = $this->zipCreator->create($source, $path, $password, $excludedFiles);
+        try {
+            $fileCount = $this->zipCreator->create($source, $path, $password, $excludedFiles);
+        } catch (RuntimeException $e) {
+            if (str_starts_with($e->getMessage(), 'No files to backup')) {
+                $logger->warning('⚠️ storage directory is empty, skipping backup', [
+                    'source' => $source,
+                ]);
+
+                return '';
+            }
+
+            throw $e;
+        }
 
         $logger->info("✅ backup archive created ({$fileCount} files): {$path}");
 
