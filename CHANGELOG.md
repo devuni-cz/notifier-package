@@ -14,7 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 -   `NotifierStorageService` now gracefully skips backup when no files are available instead of failing the job
 -   `ProcessBackupJob` now handles empty backup path from storage service without attempting upload
 
-## [2.6.2] - 2026-04-22
+## [2.6.3] - 2026-04-22
 
 ### Security
 
@@ -425,7 +425,8 @@ NOTIFIER_LOGGING_CHANNEL=backup
 -   GitHub Actions CI/CD
 -   Documentation and examples
 
-[Unreleased]: https://github.com/devuni-cz/notifier-package/compare/v2.6.2...HEAD
+[Unreleased]: https://github.com/devuni-cz/notifier-package/compare/v2.6.3...HEAD
+[2.6.3]: https://github.com/devuni-cz/notifier-package/compare/v2.6.2...v2.6.3
 [2.6.2]: https://github.com/devuni-cz/notifier-package/compare/v2.6.1...v2.6.2
 [2.6.1]: https://github.com/devuni-cz/notifier-package/compare/v2.6.0...v2.6.1
 [2.6.0]: https://github.com/devuni-cz/notifier-package/compare/v2.5.0...v2.6.0
