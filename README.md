@@ -11,8 +11,16 @@ Encrypted database & storage backups for Laravel apps, shipped to the [Devuni No
 ## How it works
 
 ```
-Your Laravel app  ──[AES-256 ZIP, chunked HTTPS]──▶  notifier.devuni.cz
-(this package)                                        (central server)
+┌─────────────────────┐        encrypted ZIP         ┌─────────────────────┐
+│  Your Laravel app   │  ───── chunked upload ─────▶ │  notifier.devuni.cz │
+│  (this package)     │        (X-Notifier-Token)    │  (central server)   │
+└─────────────────────┘                              └─────────────────────┘
+         │                                                     │
+         │ mysqldump + storage/app/public                      │ stores + monitors
+         │ → AES-256 ZIP                                       │ → sends alerts
+         ▼                                                     ▼
+    local temp file                                     long-term backup archive
+    (cleaned up after upload)
 ```
 
 > **Heads up:** This is the **client side** of the Devuni Notifier platform. Without a central server configured via `NOTIFIER_URL`, there's nowhere to send backups. If you don't have it, try [spatie/laravel-backup](https://github.com/spatie/laravel-backup) instead.
