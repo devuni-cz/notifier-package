@@ -11,6 +11,27 @@
 
 A Laravel package for automated, encrypted database and storage backups with secure remote delivery. Supports Artisan commands, HTTP API triggers, queue offloading, and AES-256 ZIP encryption out of the box.
 
+## How it works
+
+This package is the **client side** of the Devuni Notifier platform. You install it in your Laravel applications; it creates encrypted backups and ships them to a central server over authenticated HTTPS:
+
+```
+┌─────────────────────┐        encrypted ZIP         ┌─────────────────────┐
+│  Your Laravel app   │  ───── chunked upload ─────▶ │  notifier.devuni.cz │
+│  (this package)     │        (X-Notifier-Token)    │  (central server)   │
+└─────────────────────┘                              └─────────────────────┘
+         │                                                     │
+         │ mysqldump + storage/app/public                      │ stores + monitors
+         │ → AES-256 ZIP                                       │ → sends alerts
+         ▼                                                     ▼
+    local temp file                                     long-term backup archive
+    (cleaned up after upload)
+```
+
+Backups are triggered three ways: Artisan commands (for manual or scheduled runs), a rate-limited HTTP API (for external schedulers), or programmatic calls from your own code.
+
+> **Heads up:** Without a running central notifier server (configured via `NOTIFIER_URL`), this package has nowhere to send backups and will fail on upload. The central server is a separate Devuni product — if you don't have it, you'll want a general-purpose backup package like [spatie/laravel-backup](https://github.com/spatie/laravel-backup) instead.
+
 ## Features
 
 -   **Database backups** — `mysqldump` with `--single-transaction` and `--quick` for consistent, low-memory dumps
@@ -103,6 +124,33 @@ NOTIFIER_QUEUE_CONNECTION=sync               # Queue driver for API-triggered ba
 | `chunk_size` | `NOTIFIER_CHUNK_SIZE` | `20971520` | Upload chunk size in bytes. Keep under your proxy's limit (e.g. Cloudflare free: 100 MB) |
 | `queue_connection` | `NOTIFIER_QUEUE_CONNECTION` | `sync` | Queue driver for API-triggered backups. Artisan commands always run synchronously. |
 
+### Exclusion Lists
+
+Two config keys don't have env-var equivalents because they're arrays — edit `config/notifier.php` directly:
+
+```php
+// Skip these tables when dumping the database (useful for logs, telemetry, caches)
+'excluded_tables' => [
+    'telescope_entries',
+    'telescope_entries_tags',
+    'pulse_entries',
+    'sessions',
+    'cache',
+    'jobs',
+    'failed_jobs',
+],
+
+// Skip these files or directories when archiving storage (paths relative to storage/app/public)
+'excluded_files' => [
+    '.gitignore',
+    'temp',
+    'cache',
+    'logs/debug.log',
+],
+```
+
+Exclusions for `excluded_files` match both exact filenames and directory prefixes — `temp` excludes everything under `storage/app/public/temp/`.
+
 ---
 
 ## Artisan Commands
@@ -150,6 +198,39 @@ Archives `storage/app/public` into an encrypted ZIP and uploads it to the centra
 ```bash
 php artisan notifier:storage-backup
 ```
+
+---
+
+## Scheduled Backups
+
+The most common setup: run backups on a schedule using Laravel's built-in scheduler. Add this to your `routes/console.php` (Laravel 11+) or `app/Console/Kernel.php`:
+
+```php
+use Illuminate\Support\Facades\Schedule;
+
+// Daily database backup at 02:00 — keeps every day fresh
+Schedule::command('notifier:database-backup')
+    ->dailyAt('02:00')
+    ->onOneServer();
+
+// Weekly storage backup on Sunday at 03:00 — storage changes less often
+Schedule::command('notifier:storage-backup')
+    ->weeklyOn(0, '03:00')
+    ->onOneServer();
+```
+
+Make sure your Laravel scheduler is actually running — either via cron (`* * * * * cd /path && php artisan schedule:run`) or via `php artisan schedule:work` in a supervisor. Use `->onOneServer()` if you run multiple app servers to avoid duplicate backups.
+
+> **Tip:** Artisan commands always run synchronously regardless of `NOTIFIER_QUEUE_CONNECTION`. If you want scheduled backups to run on a queue worker (to avoid blocking the scheduler process), dispatch the job manually instead:
+>
+> ```php
+> use Devuni\Notifier\Enums\BackupTypeEnum;
+> use Devuni\Notifier\Jobs\ProcessBackupJob;
+>
+> Schedule::call(fn () => ProcessBackupJob::dispatch(BackupTypeEnum::Database))
+>     ->dailyAt('02:00')
+>     ->onOneServer();
+> ```
 
 ---
 
@@ -212,12 +293,14 @@ curl -X POST https://your-app.com/api/notifier/backup \
 ```json
 {
     "success": false,
-    "message": "Database backup failed.",
+    "message": "Database backup failed. See server logs for details.",
     "backup_type": "database",
-    "error": "mysqldump: command not found",
+    "error_id": "550e8400-e29b-41d4-a716-446655440000",
     "timestamp": "2025-01-15T10:30:45+00:00"
 }
 ```
+
+The `error_id` is an opaque UUID that correlates with the full exception detail (message, stack trace, `mysqldump`/7z stderr, upstream response) in your server logs — grep your `backup` channel for the UUID. Raw error messages are intentionally kept out of HTTP responses to avoid leaking internal hostnames, usernames, or filesystem paths to any holder of the token.
 
 ---
 
@@ -274,6 +357,30 @@ $storage->sendStorageBackup($path);
 
 ---
 
+## Security
+
+Backups contain your entire database and all public storage files — the package treats that accordingly.
+
+**At rest (on your server):**
+- Archives are written to `storage/app/private/` with `0600` permissions (owner-only read/write)
+- AES-256 encryption is applied by both ZIP strategies (CLI 7z and PHP ZipArchive)
+- Temporary backup files are deleted in a `finally` block — they don't stick around after upload (success or failure)
+- The ZIP password is never passed as a command-line argument to 7z; it goes through stdin, so it's not visible via `/proc/<pid>/cmdline` or `ps` on shared hosts
+
+**In transit:**
+- `NOTIFIER_URL` must use HTTPS — the package refuses to upload over plain HTTP
+- Requests are authenticated with `X-Notifier-Token` (compared via `hash_equals` to prevent timing attacks)
+- The incoming API endpoint is rate-limited (10 requests / 60 seconds per IP)
+- Each chunk is verified with SHA-256 after upload; the central server also verifies the full archive checksum on finalize
+
+**Error responses:**
+- Raw exception messages are never returned in HTTP responses. Failed backups return an opaque `error_id` (UUID) that correlates with the full detail in your server logs — this prevents leaking internal hostnames, DB usernames, filesystem paths, or upstream server internals to anyone holding a valid token.
+
+**Reporting vulnerabilities:**  
+Please see [our security policy](../../security/policy). Do not open public GitHub issues for security problems — email the maintainers instead.
+
+---
+
 ## Testing
 
 This package uses [Pest](https://pestphp.com) for testing.
@@ -309,10 +416,6 @@ Please see [CHANGELOG](CHANGELOG.md) for more information on what has changed re
 ## Contributing
 
 Please see [CONTRIBUTING](CONTRIBUTING.md) for details.
-
-## Security Vulnerabilities
-
-Please review [our security policy](../../security/policy) on how to report security vulnerabilities.
 
 ## Credits
 
