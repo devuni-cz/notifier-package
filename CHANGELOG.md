@@ -14,6 +14,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 -   `NotifierStorageService` now gracefully skips backup when no files are available instead of failing the job
 -   `ProcessBackupJob` now handles empty backup path from storage service without attempting upload
 
+## [2.6.2] - 2026-04-22
+
+### Security
+
+-   **`CliZipCreator`**: ZIP encryption password is now passed to `7z` via stdin instead of the `-p<password>` argv argument. On shared hosts, any local user could previously read the password from `/proc/<pid>/cmdline` or `ps` output while the backup process was running. Now the bare `-p` flag instructs 7z to read the password from stdin, keeping it out of the OS process table and audit logs
+-   **`NotifierSendBackupController`**: Raw exception messages are no longer returned in HTTP responses. Previous behavior leaked internal details such as `mysqldump` stderr (DB usernames, internal hosts), absolute filesystem paths, and upstream server response bodies to any holder of `NOTIFIER_BACKUP_CODE`. Responses now contain a generic message plus an opaque `error_id` (UUID) that correlates with server-side logs
+
+### Changed
+
+-   Error responses for failed backups now include `error_id` field (UUID) instead of `error` field with raw exception text — full details remain available in the server logs under the same `error_id`
+
 ## [2.6.1] - 2026-04-01
 
 ### Fixed

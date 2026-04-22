@@ -11,6 +11,7 @@ use Devuni\Notifier\Services\NotifierDatabaseService;
 use Devuni\Notifier\Services\NotifierStorageService;
 use Devuni\Notifier\Support\NotifierLogger;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Str;
 use Throwable;
 
 final class NotifierSendBackupController
@@ -69,16 +70,19 @@ final class NotifierSendBackupController
                 'timestamp' => now()->toIso8601String(),
             ]);
         } catch (Throwable $e) {
+            $errorId = (string) Str::uuid();
+
             $this->notifierLogger->get()->error('Database backup failed.', [
+                'error_id' => $errorId,
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
             ]);
 
             return response()->json([
                 'success' => false,
-                'message' => 'Database backup failed.',
+                'message' => 'Database backup failed. See server logs for details.',
                 'backup_type' => 'database',
-                'error' => $e->getMessage(),
+                'error_id' => $errorId,
                 'timestamp' => now()->toIso8601String(),
             ], 500);
         }
@@ -102,16 +106,19 @@ final class NotifierSendBackupController
                 'timestamp' => now()->toIso8601String(),
             ]);
         } catch (Throwable $e) {
+            $errorId = (string) Str::uuid();
+
             $this->notifierLogger->get()->error('Storage backup failed.', [
+                'error_id' => $errorId,
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
             ]);
 
             return response()->json([
                 'success' => false,
-                'message' => 'Storage backup failed.',
+                'message' => 'Storage backup failed. See server logs for details.',
                 'backup_type' => 'storage',
-                'error' => $e->getMessage(),
+                'error_id' => $errorId,
                 'timestamp' => now()->toIso8601String(),
             ], 500);
         }

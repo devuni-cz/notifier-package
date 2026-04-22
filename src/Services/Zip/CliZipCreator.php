@@ -46,11 +46,15 @@ final class CliZipCreator implements ZipCreator
         $cwd = $isFile ? dirname($sourcePath) : $sourcePath;
         $target = $isFile ? basename($sourcePath) : '.';
 
+        // Password is provided via stdin (not argv) to prevent exposure via
+        // /proc/<pid>/cmdline or `ps` output on shared hosts. The bare "-p"
+        // flag instructs 7z to read the password from stdin. When creating an
+        // archive, 7z prompts twice (password + verification).
         $command = [
             '7z', 'a',
             '-tzip',
             '-mem=AES256',
-            '-p'.$password,
+            '-p',
             $zipPath,
             $target,
         ];
@@ -65,6 +69,7 @@ final class CliZipCreator implements ZipCreator
 
         $process = new Process($command, $cwd);
         $process->setTimeout(600);
+        $process->setInput($password."\n".$password."\n");
         $process->run();
 
         if (! $process->isSuccessful()) {
@@ -124,7 +129,10 @@ final class CliZipCreator implements ZipCreator
 
     private function countFiles(string $zipPath, string $password): int
     {
-        $process = new Process(['7z', 'l', '-p'.$password, $zipPath]);
+        // Password via stdin (single prompt for listing) — same rationale
+        // as archive creation: avoid exposure via /proc/<pid>/cmdline.
+        $process = new Process(['7z', 'l', '-p', $zipPath]);
+        $process->setInput($password."\n");
         $process->run();
 
         if (! $process->isSuccessful()) {
