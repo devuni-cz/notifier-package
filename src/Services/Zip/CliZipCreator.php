@@ -7,6 +7,8 @@ namespace Devuni\Notifier\Services\Zip;
 use Devuni\Notifier\Contracts\ZipCreator;
 use Devuni\Notifier\Support\NotifierLogger;
 use Illuminate\Support\Facades\File;
+use RecursiveDirectoryIterator;
+use RecursiveIteratorIterator;
 use RuntimeException;
 use Symfony\Component\Process\Process;
 
@@ -98,9 +100,9 @@ final class CliZipCreator implements ZipCreator
 
     private function isDirectoryEmpty(string $directory, array $excludedFiles): bool
     {
-        $iterator = new \RecursiveIteratorIterator(
-            new \RecursiveDirectoryIterator($directory, \RecursiveDirectoryIterator::SKIP_DOTS),
-            \RecursiveIteratorIterator::SELF_FIRST
+        $iterator = new RecursiveIteratorIterator(
+            new RecursiveDirectoryIterator($directory, RecursiveDirectoryIterator::SKIP_DOTS),
+            RecursiveIteratorIterator::SELF_FIRST
         );
 
         foreach ($iterator as $file) {
