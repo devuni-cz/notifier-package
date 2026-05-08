@@ -217,7 +217,7 @@ final class ChunkedUploadService
 
     private function finalizeUpload(string $baseUrl, string $token, string $uploadId): void
     {
-        $response = Http::timeout(300)
+        $response = Http::timeout(60)
             ->withHeaders(['X-Notifier-Token' => $token])
             ->post(mb_rtrim($baseUrl, '/').'/uploads/'.$uploadId.'/finalize');
 
@@ -226,6 +226,94 @@ final class ChunkedUploadService
                 'Failed to finalize upload: HTTP '.$response->status().' — '.$this->formatErrorResponse($response)
             );
         }
+
+        // Async path (server v3+ returns 202 + status_url) — poll until terminal.
+        // Sync path (older server returns 200/201 with the result inline) — done.
+        if ($response->status() === 202) {
+            $statusUrl = $response->json('status_url');
+
+            if (! is_string($statusUrl) || $statusUrl === '') {
+                throw new RuntimeException('Server returned 202 without status_url');
+            }
+
+            $this->waitForCompletion($statusUrl, $token, $uploadId);
+        }
+    }
+
+    /**
+     * Poll the status endpoint until the upload reaches a terminal state.
+     * Throws on `failed` (with the server-supplied reason) or on timeout.
+     */
+    private function waitForCompletion(
+        string $statusUrl,
+        string $token,
+        string $uploadId,
+        int $maxWaitSeconds = 1800,
+        int $pollIntervalSeconds = 5,
+    ): void {
+        $logger = $this->notifierLogger->get();
+        $deadline = time() + $maxWaitSeconds;
+        $consecutiveErrors = 0;
+
+        while (time() < $deadline) {
+            sleep($pollIntervalSeconds);
+
+            try {
+                $response = Http::timeout(30)
+                    ->withHeaders(['X-Notifier-Token' => $token])
+                    ->get($statusUrl);
+            } catch (Throwable $e) {
+                $consecutiveErrors++;
+                $logger->warning("⚠️ status poll failed (attempt {$consecutiveErrors})", [
+                    'upload_id' => $uploadId,
+                    'error' => $e->getMessage(),
+                ]);
+
+                if ($consecutiveErrors >= 5) {
+                    throw new RuntimeException(
+                        "Status polling failed {$consecutiveErrors} times in a row: ".$e->getMessage(),
+                    );
+                }
+
+                continue;
+            }
+
+            if (! $response->successful()) {
+                $consecutiveErrors++;
+
+                if ($consecutiveErrors >= 5) {
+                    throw new RuntimeException(
+                        'Status polling kept returning HTTP '.$response->status().' — '.$this->formatErrorResponse($response),
+                    );
+                }
+
+                continue;
+            }
+
+            $consecutiveErrors = 0;
+
+            $status = $response->json('status');
+            $isTerminal = (bool) $response->json('is_terminal');
+
+            $logger->info("➡️ upload status: {$status}", [
+                'upload_id' => $uploadId,
+            ]);
+
+            if (! $isTerminal) {
+                continue;
+            }
+
+            if ($status === 'completed') {
+                return;
+            }
+
+            $reason = $response->json('failure_reason') ?: 'unknown';
+            throw new RuntimeException("Backup upload failed on server: {$reason}");
+        }
+
+        throw new RuntimeException(
+            "Backup upload did not finalize within {$maxWaitSeconds}s — server may still be processing it. Check the dashboard.",
+        );
     }
 
     /**

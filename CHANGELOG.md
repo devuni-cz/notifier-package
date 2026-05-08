@@ -5,6 +5,18 @@ All notable changes to `devuni/notifier-package` will be documented in this file
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.7.0] - 2026-05-09
+
+### Changed
+
+-   **`ChunkedUploadService::finalizeUpload`**: The server-side `finalize` endpoint now runs reassembly + checksum + validation + storeFile in a queued job and answers the HTTP request with `202 Accepted` plus a `status_url`. The client now polls that URL every 5 seconds (up to 30 minutes total) and only returns successfully when the server reports `status: completed`. On `status: failed` it throws a `RuntimeException` carrying the server-supplied `failure_reason`.
+    -   The `Http::timeout()` on the finalize POST itself dropped from 300 s to 60 s — the long wait now happens against the lightweight status endpoint instead of holding a single PHP-FPM worker hostage during reassembly.
+    -   **Backward-compatible** — older servers that still answer with `200/201` (synchronous finalize) continue to work; the new polling path activates only on `202`.
+
+### Notes
+
+-   This release pairs with the matching server-side change in `notifier-devuni-cz` (config `uploads.max_chunk_kb`, new `processing` upload status, `GET .../uploads/{id}/status` endpoint, async `FinalizeChunkedUploadJob`). Older `notifier-package` installs against the new server still work, but they will see the 202 response treated as immediate success — the server-side dashboard remains the source of truth for whether the backup actually landed.
+
 ## [2.6.4] - 2026-05-08
 
 ### Fixed
