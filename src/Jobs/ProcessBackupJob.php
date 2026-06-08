@@ -6,8 +6,8 @@ namespace Devuni\Notifier\Jobs;
 
 use Devuni\Notifier\Enums\BackupTypeEnum;
 use Devuni\Notifier\Services\NotifierDatabaseService;
+use Devuni\Notifier\Services\NotifierLoggerService;
 use Devuni\Notifier\Services\NotifierStorageService;
-use Devuni\Notifier\Support\NotifierLogger;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -22,15 +22,8 @@ final class ProcessBackupJob implements ShouldQueue
     use Queueable;
     use SerializesModels;
 
-    /**
-     * The number of seconds the job can run before timing out.
-     */
     public int $timeout = 900;
 
-    /**
-     * The number of times the job may be attempted.
-     * Backup files are cleaned up after each attempt, so retrying is not safe.
-     */
     public int $tries = 1;
 
     public function __construct(
@@ -40,7 +33,7 @@ final class ProcessBackupJob implements ShouldQueue
     public function handle(
         NotifierDatabaseService $databaseService,
         NotifierStorageService $storageService,
-        NotifierLogger $notifierLogger,
+        NotifierLoggerService $notifierLogger,
     ): void {
         $logger = $notifierLogger->get();
         $startTime = microtime(true);
@@ -64,8 +57,7 @@ final class ProcessBackupJob implements ShouldQueue
 
     public function failed(Throwable $exception): void
     {
-        // failed() is called by the framework — resolve logger from container
-        $notifierLogger = app(NotifierLogger::class);
+        $notifierLogger = app(NotifierLoggerService::class);
         $notifierLogger->get()->error('❌ backup job failed', [
             'backup_type' => $this->backupType->value,
             'error' => $exception->getMessage(),

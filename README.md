@@ -6,7 +6,7 @@
 [![Laravel 12](https://img.shields.io/badge/Laravel-12-FF2D20?style=flat-square&logo=laravel&logoColor=white)](https://laravel.com)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green?style=flat-square)](LICENSE.md)
 
-Encrypted database & storage backups for Laravel apps, shipped to the [Devuni Notifier](https://notifier.devuni.cz) central server. AES-256 ZIPs, chunked HTTPS upload, token auth, queue support.
+Encrypted database & storage backups for Laravel apps, shipped to the [Devuni Notifier](https://notifier.devuni.cz) central server. AES-256 ZIPs, chunked HTTPS upload, token auth, queue support. Supports **MySQL**, **MariaDB**, **PostgreSQL**, and **YugabyteDB** (via YSQL).
 
 ## How it works
 
@@ -34,7 +34,7 @@ php artisan notifier:install   # interactive .env wizard
 php artisan notifier:check     # verify setup (env, DB, 7z, mysqldump, URL)
 ```
 
-**Requirements:** PHP 8.4+, Laravel 12+, `mysqldump`, and `p7zip-full` (recommended) or PHP `zip` extension.
+**Requirements:** PHP 8.4+, Laravel 12+, the right dump tool for your DB (`mysqldump` / `mariadb-dump` for MySQL & MariaDB, `pg_dump` or `ysql_dump` for PostgreSQL & YugabyteDB), and `p7zip-full` (recommended) or PHP `zip` extension.
 
 ## Usage
 
@@ -66,7 +66,7 @@ curl -X POST https://your-app.com/api/notifier/backup \
   -d "type=backup_database"   # or backup_storage
 ```
 
-On failure the response returns an opaque `error_id` (UUID) — the full detail (stack trace, `mysqldump`/7z stderr) stays in your `backup` log channel. Grep logs for the UUID to correlate.
+On failure the response returns an opaque `error_id` (UUID) - the full detail (stack trace, `mysqldump`/7z stderr) stays in your `backup` log channel. Grep logs for the UUID to correlate.
 
 ## Configure
 
@@ -78,11 +78,25 @@ NOTIFIER_URL=https://notifier.devuni.cz/api/v1/repositories/123 # your endpoint
 NOTIFIER_BACKUP_PASSWORD=...                                    # ZIP password
 ```
 
-Optional: `NOTIFIER_LOGGING_CHANNEL`, `NOTIFIER_ROUTES_ENABLED`, `NOTIFIER_ROUTE_PREFIX`, `NOTIFIER_ZIP_STRATEGY` (`auto`/`cli`/`php`), `NOTIFIER_CHUNK_SIZE`, `NOTIFIER_QUEUE_CONNECTION`. See [`config/notifier.php`](config/notifier.php) for defaults and descriptions.
+Optional: `NOTIFIER_LOGGING_CHANNEL`, `NOTIFIER_ROUTES_ENABLED`, `NOTIFIER_ROUTE_PREFIX`, `NOTIFIER_ZIP_STRATEGY` (`auto`/`cli`/`php`), `NOTIFIER_CHUNK_SIZE`, `NOTIFIER_QUEUE_CONNECTION`, `NOTIFIER_DATABASE_CONNECTION`, `NOTIFIER_POSTGRES_DUMP_BINARY`, `NOTIFIER_POSTGRES_SCHEMA`. See [`config/notifier.php`](config/notifier.php) for defaults and descriptions.
+
+### Database engine
+
+The package auto-detects which dump tool to use from your Laravel connection driver:
+
+| Driver | Tool used | Install |
+|---|---|---|
+| `mysql`, `mariadb` | `mysqldump` | `apt install mysql-client` or `mariadb-client` |
+| `pgsql` (PostgreSQL) | `pg_dump` | `apt install postgresql-client` |
+| `pgsql` (YugabyteDB) | `ysql_dump` if installed, else `pg_dump` | [YugabyteDB tools](https://docs.yugabyte.com) |
+
+By default the package backs up your app's **default** Laravel connection (`config('database.default')`). Override with `NOTIFIER_DATABASE_CONNECTION=pgsql` if you want a different one.
+
+For PostgreSQL/Yugabyte, force a specific binary via `NOTIFIER_POSTGRES_DUMP_BINARY=ysql_dump` (or `pg_dump`). Non-`public` schemas: set `NOTIFIER_POSTGRES_SCHEMA=myschema`.
 
 ### Exclusions
 
-Arrays — edit `config/notifier.php`:
+Arrays - edit `config/notifier.php`:
 
 ```php
 'excluded_tables' => ['telescope_entries', 'sessions', 'cache', 'jobs', 'failed_jobs'],
@@ -103,12 +117,12 @@ Artisan commands always run synchronously regardless of this setting.
 
 - **At rest:** AES-256 encrypted archives with `0600` permissions, cleaned up after upload
 - **In transit:** HTTPS-only, `hash_equals` token comparison, per-chunk + full-file SHA-256 verification
-- **No leaks:** ZIP password passed via stdin (not argv — invisible to `ps` / `/proc/*/cmdline`); API errors return opaque UUIDs, not raw exception messages
-- **Report vulnerabilities:** see [security policy](../../security/policy) — don't open public issues
+- **No leaks:** ZIP password passed via stdin (not argv - invisible to `ps` / `/proc/*/cmdline`); API errors return opaque UUIDs, not raw exception messages
+- **Report vulnerabilities:** see [security policy](../../security/policy) - don't open public issues
 
 ## Links
 
-- [Changelog](CHANGELOG.md) — see what's new in each release
+- [Changelog](CHANGELOG.md) - see what's new in each release
 - [Contributing](CONTRIBUTING.md)
 - [Full config reference](config/notifier.php)
 
@@ -119,4 +133,4 @@ Artisan commands always run synchronously regardless of this setting.
 
 ## License
 
-MIT — see [LICENSE.md](LICENSE.md).
+MIT - see [LICENSE.md](LICENSE.md).

@@ -4,16 +4,16 @@ declare(strict_types=1);
 
 namespace Devuni\Notifier\Commands;
 
-use Devuni\Notifier\Concerns\ChecksNotifierEnvironment;
-use Devuni\Notifier\Concerns\DisplayHelper;
 use Devuni\Notifier\Services\NotifierConfigService;
 use Devuni\Notifier\Services\NotifierStorageService;
+use Devuni\Notifier\Traits\ChecksNotifierEnvironmentTrait;
+use Devuni\Notifier\Traits\DisplayHelperTrait;
 use Illuminate\Console\Command;
 
 final class NotifierStorageBackupCommand extends Command
 {
-    use ChecksNotifierEnvironment;
-    use DisplayHelper;
+    use ChecksNotifierEnvironmentTrait;
+    use DisplayHelperTrait;
 
     protected $signature = 'notifier:storage-backup';
 

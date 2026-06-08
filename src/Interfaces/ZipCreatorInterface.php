@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace Devuni\Notifier\Contracts;
+namespace Devuni\Notifier\Interfaces;
 
 use RuntimeException;
 
-interface ZipCreator
+interface ZipCreatorInterface
 {
     /**
      * Check if this strategy is available on the current system.

@@ -8,8 +8,8 @@ use Devuni\Notifier\Enums\BackupTypeEnum;
 use Devuni\Notifier\Jobs\ProcessBackupJob;
 use Devuni\Notifier\Requests\BackupRequest;
 use Devuni\Notifier\Services\NotifierDatabaseService;
+use Devuni\Notifier\Services\NotifierLoggerService;
 use Devuni\Notifier\Services\NotifierStorageService;
-use Devuni\Notifier\Support\NotifierLogger;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Str;
 use Throwable;
@@ -19,7 +19,7 @@ final class NotifierSendBackupController
     public function __construct(
         private readonly NotifierDatabaseService $databaseService,
         private readonly NotifierStorageService $storageService,
-        private readonly NotifierLogger $notifierLogger,
+        private readonly NotifierLoggerService $notifierLogger,
     ) {}
 
     public function __invoke(BackupRequest $request): JsonResponse

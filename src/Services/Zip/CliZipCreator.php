@@ -4,18 +4,18 @@ declare(strict_types=1);
 
 namespace Devuni\Notifier\Services\Zip;
 
-use Devuni\Notifier\Contracts\ZipCreator;
-use Devuni\Notifier\Support\NotifierLogger;
+use Devuni\Notifier\Interfaces\ZipCreatorInterface;
+use Devuni\Notifier\Services\NotifierLoggerService;
 use Illuminate\Support\Facades\File;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
 use RuntimeException;
 use Symfony\Component\Process\Process;
 
-final class CliZipCreator implements ZipCreator
+final class CliZipCreator implements ZipCreatorInterface
 {
     public function __construct(
-        private readonly NotifierLogger $notifierLogger,
+        private readonly NotifierLoggerService $notifierLogger,
     ) {}
 
     public static function isAvailable(): bool
@@ -160,7 +160,7 @@ final class CliZipCreator implements ZipCreator
 
     private function countFiles(string $zipPath, string $password): int
     {
-        // Password via stdin (single prompt for listing) — same rationale
+        // Password via stdin (single prompt for listing) - same rationale
         // as archive creation: avoid exposure via /proc/<pid>/cmdline.
         $process = new Process(['7z', 'l', '-p', $zipPath]);
         $process->setInput($password."\n");

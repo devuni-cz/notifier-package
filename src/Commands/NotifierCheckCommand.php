@@ -4,11 +4,15 @@ declare(strict_types=1);
 
 namespace Devuni\Notifier\Commands;
 
-use Devuni\Notifier\Concerns\DisplayHelper;
+use Devuni\Notifier\Interfaces\DatabaseDumperInterface;
+use Devuni\Notifier\Services\Database\LazyDatabaseDumper;
+use Devuni\Notifier\Services\Database\MysqlDumper;
+use Devuni\Notifier\Services\Database\PostgresDumper;
 use Devuni\Notifier\Services\NotifierConfigService;
+use Devuni\Notifier\Services\NotifierLoggerService;
 use Devuni\Notifier\Services\Zip\CliZipCreator;
 use Devuni\Notifier\Services\Zip\PhpZipCreator;
-use Devuni\Notifier\Support\NotifierLogger;
+use Devuni\Notifier\Traits\DisplayHelperTrait;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
@@ -17,7 +21,7 @@ use Throwable;
 
 final class NotifierCheckCommand extends Command
 {
-    use DisplayHelper;
+    use DisplayHelperTrait;
 
     protected $signature = 'notifier:check';
 
@@ -25,14 +29,14 @@ final class NotifierCheckCommand extends Command
 
     private bool $hasErrors = false;
 
-    public function handle(NotifierConfigService $configService, NotifierLogger $notifierLogger): int
+    public function handle(NotifierConfigService $configService, NotifierLoggerService $notifierLogger): int
     {
         $this->displayNotifierHeader('Health Check');
 
         $this->checkEnvironmentVariables($configService);
         $this->checkDatabaseConnection();
         $this->checkStorageDirectories();
-        $this->checkMysqldumpAvailability();
+        $this->checkDatabaseDumpTool();
         $this->checkZipAvailability();
         $this->checkLoggingChannel($notifierLogger);
         $this->checkQueueConfiguration();
@@ -155,25 +159,51 @@ final class NotifierCheckCommand extends Command
     }
 
     /**
-     * Check if mysqldump is available for database backups.
+     * Check if the right dump binary is available for the configured driver.
      */
-    private function checkMysqldumpAvailability(): void
+    private function checkDatabaseDumpTool(): void
     {
-        $this->line('<fg=yellow;options=bold>🔍 Checking mysqldump availability...</>');
+        $this->line('<fg=yellow;options=bold>🔍 Checking database dump tool...</>');
 
-        $result = shell_exec('which mysqldump 2>/dev/null') ?? shell_exec('where mysqldump 2>nul');
+        $connection = config('notifier.database_connection') ?: config('database.default');
+        $driver = config("database.connections.{$connection}.driver");
 
-        if (! empty(mb_trim($result ?? ''))) {
-            $version = shell_exec('mysqldump --version 2>&1');
-            $this->line('   <fg=green>✓</> mysqldump is available');
-            if ($version) {
-                $this->line('   <fg=gray>'.mb_trim($version).'</>');
+        $this->line("   <fg=gray>Connection:</> <fg=cyan>{$connection}</> <fg=gray>(driver: {$driver})</>");
+
+        try {
+            $dumper = app(DatabaseDumperInterface::class);
+
+            // Unwrap LazyDatabaseDumper to expose the concrete implementation
+            if ($dumper instanceof LazyDatabaseDumper) {
+                $dumper = $dumper->resolve();
             }
+        } catch (Throwable $e) {
+            $this->hasErrors = true;
+            $this->line('   <fg=red>✗</> '.$e->getMessage());
+            $this->newLine();
+
+            return;
+        }
+
+        $available = match (true) {
+            $dumper instanceof MysqlDumper => MysqlDumper::isAvailable(),
+            $dumper instanceof PostgresDumper => PostgresDumper::isAvailable(),
+            default => false,
+        };
+
+        if ($available) {
+            $this->line('   <fg=green>✓</> '.$dumper->describe());
         } else {
             $this->hasErrors = true;
-            $this->line('   <fg=red>✗</> mysqldump is not available');
-            $this->line('   <fg=gray>→ Install MySQL client tools to enable database backups</>');
+            $hint = match (true) {
+                $dumper instanceof MysqlDumper => 'Install MySQL client tools (e.g. `apt install mysql-client` or `mariadb-client`)',
+                $dumper instanceof PostgresDumper => 'Install PostgreSQL client tools (`apt install postgresql-client`) or YugabyteDB tools',
+                default => 'No dump tool available for this driver',
+            };
+            $this->line('   <fg=red>✗</> Required dump binary is not available on PATH');
+            $this->line("   <fg=gray>→ {$hint}</>");
         }
+
         $this->newLine();
     }
 
@@ -200,7 +230,7 @@ final class NotifierCheckCommand extends Command
 
         if (! $cliAvailable && ! $phpAvailable) {
             $this->hasErrors = true;
-            $this->line('   <fg=red>✗</> No ZIP strategy available — storage backups will fail');
+            $this->line('   <fg=red>✗</> No ZIP strategy available - storage backups will fail');
         } else {
             $active = $cliAvailable ? 'cli (7z)' : 'php (ZipArchive)';
 
@@ -217,7 +247,7 @@ final class NotifierCheckCommand extends Command
     /**
      * Check if the preferred logging channel is configured.
      */
-    private function checkLoggingChannel(NotifierLogger $notifierLogger): void
+    private function checkLoggingChannel(NotifierLoggerService $notifierLogger): void
     {
         $this->line('<fg=yellow;options=bold>🔍 Checking logging channel...</>');
 
@@ -239,7 +269,7 @@ final class NotifierCheckCommand extends Command
         $connection = config('notifier.queue_connection', 'sync');
 
         if ($connection === 'sync') {
-            $this->line('   <fg=gray>ℹ</> Queue connection is "sync" — backups run synchronously in the HTTP request');
+            $this->line('   <fg=gray>ℹ</> Queue connection is "sync" - backups run synchronously in the HTTP request');
             $this->line('   <fg=gray>→ Set NOTIFIER_QUEUE_CONNECTION to database, redis, or another async driver to offload backups</>');
         } else {
             $this->line("   <fg=green>✓</> Backups dispatched to queue: <fg=cyan>{$connection}</>");

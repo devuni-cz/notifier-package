@@ -2,24 +2,24 @@
 
 declare(strict_types=1);
 
-namespace Devuni\Notifier\Concerns;
+namespace Devuni\Notifier\Traits;
 
 use Composer\InstalledVersions;
-use Devuni\Notifier\Enums\Theme;
+use Devuni\Notifier\Enums\ThemeEnum;
 use OutOfBoundsException;
 
 use function Laravel\Prompts\note;
 
-trait DisplayHelper
+trait DisplayHelperTrait
 {
-    protected ?Theme $theme = null;
+    protected ?ThemeEnum $theme = null;
 
-    protected function initTheme(?Theme $theme = null): void
+    protected function initTheme(?ThemeEnum $theme = null): void
     {
-        $this->theme = $theme ?? Theme::random();
+        $this->theme = $theme ?? ThemeEnum::random();
     }
 
-    protected function displayNotifierHeader(string $featureName, ?Theme $theme = null): void
+    protected function displayNotifierHeader(string $featureName, ?ThemeEnum $theme = null): void
     {
         $this->initTheme($theme);
 

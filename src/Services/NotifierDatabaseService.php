@@ -5,20 +5,20 @@ declare(strict_types=1);
 namespace Devuni\Notifier\Services;
 
 use Carbon\Carbon;
-use Devuni\Notifier\Contracts\ZipCreator;
 use Devuni\Notifier\Enums\BackupTypeEnum;
-use Devuni\Notifier\Support\NotifierLogger;
+use Devuni\Notifier\Interfaces\DatabaseDumperInterface;
+use Devuni\Notifier\Interfaces\ZipCreatorInterface;
 use Illuminate\Support\Facades\File;
 use RuntimeException;
-use Symfony\Component\Process\Process;
 use Throwable;
 
 final class NotifierDatabaseService
 {
     public function __construct(
         private readonly ChunkedUploadService $uploadService,
-        private readonly ZipCreator $zipCreator,
-        private readonly NotifierLogger $notifierLogger,
+        private readonly ZipCreatorInterface $zipCreator,
+        private readonly DatabaseDumperInterface $databaseDumper,
+        private readonly NotifierLoggerService $notifierLogger,
     ) {}
 
     public function createDatabaseBackup(): string
@@ -33,47 +33,17 @@ final class NotifierDatabaseService
         $filename = 'backup-'.Carbon::now()->format('Y-m-d_H-i-s').'.sql';
         $path = $backupDirectory.'/'.$filename;
 
-        $logger->info('➡️ creating backup file');
+        $logger->info('➡️ creating backup file', [
+            'dumper' => $this->databaseDumper::class,
+        ]);
 
-        $config = config('database.connections.mysql');
-        $excludedTables = config('notifier.excluded_tables', []);
-
-        $command = [
-            'mysqldump',
-            '--no-tablespaces',
-            '--single-transaction',
-            '--quick',
-            '--user='.$config['username'],
-            '--port='.$config['port'],
-            '--host='.$config['host'],
-        ];
-
-        foreach ($excludedTables as $table) {
-            $command[] = '--ignore-table='.$config['database'].'.'.$table;
-        }
-
-        $command[] = '--result-file='.$path;
-        $command[] = $config['database'];
-
-        $process = new Process($command);
-        $process->setTimeout(600);
-        $process->setEnv(['MYSQL_PWD' => $config['password']]);
-        $process->run();
-
-        if (! $process->isSuccessful()) {
-            $logger->error('❌ mysqldump failed', [
-                'exitCode' => $process->getExitCode(),
-                'error' => $process->getErrorOutput(),
-            ]);
-
-            throw new RuntimeException('Database backup failed: '.$process->getErrorOutput());
-        }
+        $this->databaseDumper->dump($path);
 
         // Validate the SQL dump before proceeding
         if (! file_exists($path)) {
             throw new RuntimeException(
                 'SQL dump file was not created at: '.$path
-                .'. mysqldump reported success but the file does not exist.'
+                .'. Dump command reported success but the file does not exist.'
             );
         }
 
@@ -84,7 +54,7 @@ final class NotifierDatabaseService
 
             throw new RuntimeException(
                 'SQL dump file is empty at: '.$path
-                .'. The database may be empty or mysqldump produced no output.'
+                .'. The database may be empty or the dump command produced no output.'
             );
         }
 

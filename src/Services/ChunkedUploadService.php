@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Devuni\Notifier\Services;
 
-use Devuni\Notifier\Support\NotifierLogger;
 use GuzzleHttp\Promise\PromiseInterface;
 use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\Http;
@@ -14,7 +13,7 @@ use Throwable;
 final class ChunkedUploadService
 {
     public function __construct(
-        private readonly NotifierLogger $notifierLogger,
+        private readonly NotifierLoggerService $notifierLogger,
     ) {}
 
     /**
@@ -132,7 +131,7 @@ final class ChunkedUploadService
 
         if (! $response->successful()) {
             throw new RuntimeException(
-                'Failed to initialize upload: HTTP '.$response->status().' — '.$this->formatErrorResponse($response)
+                'Failed to initialize upload: HTTP '.$response->status().' - '.$this->formatErrorResponse($response)
             );
         }
 
@@ -183,7 +182,7 @@ final class ChunkedUploadService
                     return;
                 }
 
-                // Retry 429 (rate limited) — it's transient, not a client mistake
+                // Retry 429 (rate limited) - it's transient, not a client mistake
                 if ($response->status() === 429) {
                     $lastException = new RuntimeException(
                         "Chunk {$chunkNumber} rate limited: HTTP 429"
@@ -191,11 +190,11 @@ final class ChunkedUploadService
                 } elseif ($response->status() >= 400 && $response->status() < 500) {
                     // Don't retry other 4xx errors (client mistakes)
                     throw new RuntimeException(
-                        "Chunk {$chunkNumber} rejected: HTTP ".$response->status().' — '.$this->formatErrorResponse($response)
+                        "Chunk {$chunkNumber} rejected: HTTP ".$response->status().' - '.$this->formatErrorResponse($response)
                     );
                 } else {
                     $lastException = new RuntimeException(
-                        "Chunk {$chunkNumber} failed: HTTP ".$response->status().' — '.$this->formatErrorResponse($response)
+                        "Chunk {$chunkNumber} failed: HTTP ".$response->status().' - '.$this->formatErrorResponse($response)
                     );
                 }
             } catch (RuntimeException $e) {
@@ -223,18 +222,23 @@ final class ChunkedUploadService
 
         if (! $response->successful()) {
             throw new RuntimeException(
-                'Failed to finalize upload: HTTP '.$response->status().' — '.$this->formatErrorResponse($response)
+                'Failed to finalize upload: HTTP '.$response->status().' - '.$this->formatErrorResponse($response)
             );
         }
 
-        // Async path (server v3+ returns 202 + status_url) — poll until terminal.
-        // Sync path (older server returns 200/201 with the result inline) — done.
+        // Async path (server v3+ returns 202 + status_url) - poll until terminal.
+        // Sync path (older server returns 200/201 with the result inline) - done.
         if ($response->status() === 202) {
             $statusUrl = $response->json('status_url');
 
             if (! is_string($statusUrl) || $statusUrl === '') {
                 throw new RuntimeException('Server returned 202 without status_url');
             }
+
+            // The secret token is about to be attached to status_url. Never send it
+            // anywhere but the configured, HTTPS backup origin - the rest of the
+            // package enforces the same HTTPS-only invariant (see upload()).
+            $this->assertTrustedStatusUrl($statusUrl, $baseUrl);
 
             $this->waitForCompletion($statusUrl, $token, $uploadId);
         }
@@ -260,6 +264,7 @@ final class ChunkedUploadService
 
             try {
                 $response = Http::timeout(30)
+                    ->withOptions(['allow_redirects' => false])
                     ->withHeaders(['X-Notifier-Token' => $token])
                     ->get($statusUrl);
             } catch (Throwable $e) {
@@ -283,7 +288,7 @@ final class ChunkedUploadService
 
                 if ($consecutiveErrors >= 5) {
                     throw new RuntimeException(
-                        'Status polling kept returning HTTP '.$response->status().' — '.$this->formatErrorResponse($response),
+                        'Status polling kept returning HTTP '.$response->status().' - '.$this->formatErrorResponse($response),
                     );
                 }
 
@@ -312,8 +317,36 @@ final class ChunkedUploadService
         }
 
         throw new RuntimeException(
-            "Backup upload did not finalize within {$maxWaitSeconds}s — server may still be processing it. Check the dashboard.",
+            "Backup upload did not finalize within {$maxWaitSeconds}s - server may still be processing it. Check the dashboard.",
         );
+    }
+
+    /**
+     * Reject a server-supplied status_url that does not share the configured
+     * backup origin. The token is a long-lived shared secret; without this guard
+     * a tampered/misconfigured finalize response could redirect it to a cleartext
+     * or attacker-controlled host (the GET also runs with redirects disabled).
+     */
+    private function assertTrustedStatusUrl(string $statusUrl, string $baseUrl): void
+    {
+        $base = parse_url($baseUrl);
+        $target = parse_url($statusUrl);
+
+        if (! is_array($target) || ($target['scheme'] ?? null) !== 'https') {
+            throw new RuntimeException('Refusing to poll non-HTTPS status_url: '.$statusUrl);
+        }
+
+        $baseHost = mb_strtolower($base['host'] ?? '');
+        $targetHost = mb_strtolower($target['host'] ?? '');
+
+        if ($targetHost === '' || $targetHost !== $baseHost) {
+            throw new RuntimeException('Refusing to poll status_url on unexpected host: '.$statusUrl);
+        }
+
+        // Treat the implicit HTTPS port (443) and an explicit :443 as equivalent.
+        if (($base['port'] ?? 443) !== ($target['port'] ?? 443)) {
+            throw new RuntimeException('Refusing to poll status_url on unexpected port: '.$statusUrl);
+        }
     }
 
     /**

@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace Devuni\Notifier\Concerns;
+namespace Devuni\Notifier\Traits;
 
 use Devuni\Notifier\Services\NotifierConfigService;
 use Illuminate\Console\Command;
 
 /** @mixin Command */
-trait ChecksNotifierEnvironment
+trait ChecksNotifierEnvironmentTrait
 {
     private function checkMissingVariables(NotifierConfigService $configService): int
     {

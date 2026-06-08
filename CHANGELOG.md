@@ -7,15 +7,44 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [2.7.0] - 2026-05-09
 
+### Added
+
+-   **PostgreSQL and YugabyteDB support** - the package now backs up databases via `pg_dump` (PostgreSQL) or `ysql_dump` (YugabyteDB) in addition to `mysqldump`. The right tool is auto-selected from your Laravel connection driver (`mysql`/`mariadb`/`pgsql`).
+-   **`DatabaseDumperInterface` contract** (`src/Interfaces/DatabaseDumperInterface.php`) - pluggable strategy pattern mirroring `ZipCreatorInterface`. New implementations: `MysqlDumper`, `PostgresDumper`, and a `LazyDatabaseDumper` proxy that defers driver resolution to first use (so unsupported drivers don't break container resolution for unrelated code paths).
+-   **`NOTIFIER_DATABASE_CONNECTION` config option** - override which Laravel connection to back up (defaults to `config('database.default')`).
+-   **`NOTIFIER_POSTGRES_DUMP_BINARY` config option** - force `pg_dump` or `ysql_dump` instead of auto-detection.
+-   **`NOTIFIER_POSTGRES_SCHEMA` config option** - default schema for unqualified excluded-table names on PostgreSQL/Yugabyte (defaults to `public`).
+-   `excluded_tables` config now accepts either plain table names (auto-prefixed with the database name on MySQL/MariaDB, or with `postgres_schema` on PostgreSQL) or fully qualified `schema.table` / `db.table` names (passed through as-is).
+
 ### Changed
 
 -   **`ChunkedUploadService::finalizeUpload`**: The server-side `finalize` endpoint now runs reassembly + checksum + validation + storeFile in a queued job and answers the HTTP request with `202 Accepted` plus a `status_url`. The client now polls that URL every 5 seconds (up to 30 minutes total) and only returns successfully when the server reports `status: completed`. On `status: failed` it throws a `RuntimeException` carrying the server-supplied `failure_reason`.
-    -   The `Http::timeout()` on the finalize POST itself dropped from 300 s to 60 s — the long wait now happens against the lightweight status endpoint instead of holding a single PHP-FPM worker hostage during reassembly.
-    -   **Backward-compatible** — older servers that still answer with `200/201` (synchronous finalize) continue to work; the new polling path activates only on `202`.
+    -   The `Http::timeout()` on the finalize POST itself dropped from 300 s to 60 s - the long wait now happens against the lightweight status endpoint instead of holding a single PHP-FPM worker hostage during reassembly.
+    -   **Backward-compatible** - older servers that still answer with `200/201` (synchronous finalize) continue to work; the new polling path activates only on `202`.
+-   `NotifierDatabaseService` now receives a `DatabaseDumperInterface` via constructor injection instead of running `mysqldump` inline. The dump-vs-validate-vs-encrypt flow is unchanged from `2.6.x`.
+-   `notifier:check` replaces the hard-coded "mysqldump availability" check with a driver-aware "database dump tool" check that validates the right binary for your configured connection.
+-   **BREAKING - naming convention for interfaces, traits, and enums.** All package interfaces and traits now carry an explicit type suffix and live in type-named namespaces (`Interfaces\`, `Traits\`) instead of the Laravel-style `Contracts\` / `Concerns\`, enums consistently use the `Enum` suffix, and the `Support\` utility namespace was folded into `Services\`:
+    -   `Devuni\Notifier\Contracts\ZipCreator` → `Devuni\Notifier\Interfaces\ZipCreatorInterface`
+    -   `Devuni\Notifier\Contracts\DatabaseDumper` → `Devuni\Notifier\Interfaces\DatabaseDumperInterface`
+    -   `Devuni\Notifier\Concerns\ChecksNotifierEnvironment` → `Devuni\Notifier\Traits\ChecksNotifierEnvironmentTrait`
+    -   `Devuni\Notifier\Concerns\DisplayHelper` → `Devuni\Notifier\Traits\DisplayHelperTrait`
+    -   `Devuni\Notifier\Enums\Theme` → `Devuni\Notifier\Enums\ThemeEnum` (the `Enums\` namespace is unchanged; only the missing `Enum` suffix was added, matching the existing `BackupTypeEnum`)
+    -   `Devuni\Notifier\Support\NotifierLogger` → `Devuni\Notifier\Services\NotifierLoggerService` (the `Support\` namespace is removed; the logger is a container-bound service, so it now follows the `Services\*Service` convention)
+    -   Concrete strategy classes (`CliZipCreator`, `PhpZipCreator`, `MysqlDumper`, `PostgresDumper`, `LazyDatabaseDumper`) keep their names. Container bindings now key off the renamed FQCNs, so consumers that resolve services from the container are unaffected — only code that references the old FQCNs directly needs its imports updated.
+
+### Security
+
+-   **`ChunkedUploadService` finalize polling now validates `status_url` before attaching the token.** The async polling path attaches the long-lived `backup_code` secret (`X-Notifier-Token`) to the URL the server returns in the `202` response. The client now rejects any `status_url` that is not HTTPS or whose host/port does not match the configured `backup_url` origin, and disables redirect-following on the status GET (`allow_redirects => false`). This restores the package's HTTPS-only-in-transit invariant for the new poll requests and prevents a tampered/misconfigured finalize response from redirecting the secret to a cleartext or attacker-controlled host.
 
 ### Notes
 
--   This release pairs with the matching server-side change in `notifier-devuni-cz` (config `uploads.max_chunk_kb`, new `processing` upload status, `GET .../uploads/{id}/status` endpoint, async `FinalizeChunkedUploadJob`). Older `notifier-package` installs against the new server still work, but they will see the 202 response treated as immediate success — the server-side dashboard remains the source of truth for whether the backup actually landed.
+-   The finalize polling change pairs with the matching server-side change in `notifier-devuni-cz` (config `uploads.max_chunk_kb`, new `processing` upload status, `GET .../uploads/{id}/status` endpoint, async `FinalizeChunkedUploadJob`). Older `notifier-package` installs against the new server still work, but they will see the 202 response treated as immediate success - the server-side dashboard remains the source of truth for whether the backup actually landed.
+
+### Migration
+
+No code changes required for existing MySQL/MariaDB users - DB behavior is identical and the default Laravel connection is still used automatically. To switch a project to PostgreSQL or YugabyteDB, point `config/database.php` at the new connection and (if it's not the default) set `NOTIFIER_DATABASE_CONNECTION`.
+
+If your project references the package's interfaces or traits directly (e.g. a custom `ZipCreatorInterface` implementation, or a command that `use`s the display/environment traits), update the imports to the new `Devuni\Notifier\Interfaces\*Interface` / `Devuni\Notifier\Traits\*Trait` names. Code that only resolves services from the Laravel container needs no change.
 
 ## [2.6.4] - 2026-05-08
 
@@ -35,13 +64,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
--   Error responses for failed backups now include `error_id` field (UUID) instead of `error` field with raw exception text — full details remain available in the server logs under the same `error_id`
+-   Error responses for failed backups now include `error_id` field (UUID) instead of `error` field with raw exception text - full details remain available in the server logs under the same `error_id`
 
 ## [2.6.2] - 2026-04-06
 
 ### Fixed
 
--   Fixed `CliZipCreator` silently failing when storage directory is empty — 7z returns exit code 0 but creates no ZIP file, causing `RuntimeException`
+-   Fixed `CliZipCreator` silently failing when storage directory is empty - 7z returns exit code 0 but creates no ZIP file, causing `RuntimeException`
 -   Added `isDirectoryEmpty()` pre-check in `CliZipCreator` to detect empty source directories (respecting excluded files) before invoking 7z
 -   `NotifierStorageService` now gracefully skips backup when no files are available instead of failing the job
 -   `ProcessBackupJob` now handles empty backup path from storage service without attempting upload
@@ -50,20 +79,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
--   Fixed empty storage backup being sent to server — added early-exit validation that skips upload when ZIP archive is empty or too small (< 100 bytes)
--   Fixed missing backup file cleanup when empty archive is detected — file is now properly deleted before early return
--   Fixed missing diagnostics in `CliZipCreator` when 7z reports success but ZIP file is not created — error now includes 7z stdout, stderr, source path, existence, and size
+-   Fixed empty storage backup being sent to server - added early-exit validation that skips upload when ZIP archive is empty or too small (< 100 bytes)
+-   Fixed missing backup file cleanup when empty archive is detected - file is now properly deleted before early return
+-   Fixed missing diagnostics in `CliZipCreator` when 7z reports success but ZIP file is not created - error now includes 7z stdout, stderr, source path, existence, and size
 -   Removed `-bso0` and `-bsp0` flags from 7z command to allow output capture for debugging
--   Added SQL dump validation in `NotifierDatabaseService` — verifies dump file exists and is non-empty before attempting ZIP encryption
--   Fixed empty error messages from server responses (`HTTP 422 —`) — `ChunkedUploadService` now parses JSON `message` and `errors` fields from server response for actionable diagnostics
+-   Added SQL dump validation in `NotifierDatabaseService` - verifies dump file exists and is non-empty before attempting ZIP encryption
+-   Fixed empty error messages from server responses (`HTTP 422 -`) - `ChunkedUploadService` now parses JSON `message` and `errors` fields from server response for actionable diagnostics
 
 ## [2.6.0] - 2026-03-25
 
 ### Changed
 
 -   Refactored all static method calls to dependency injection via Laravel service container
--   `NotifierLogger` converted from static utility to injectable singleton — all classes now receive it through constructor or method injection
--   `ZipManager` removed — ZIP strategy resolution moved into `NotifierServiceProvider::register()` as a `ZipCreator` singleton binding
+-   `NotifierLogger` converted from static utility to injectable singleton - all classes now receive it through constructor or method injection
+-   `ZipManager` removed - ZIP strategy resolution moved into `NotifierServiceProvider::register()` as a `ZipCreator` singleton binding
 -   `CliZipCreator` and `PhpZipCreator` now receive `NotifierLogger` via constructor injection
 -   `NotifierDatabaseService` and `NotifierStorageService` now receive `ZipCreator` and `NotifierLogger` via constructor injection
 -   `ChunkedUploadService` now receives `NotifierLogger` via constructor injection
@@ -73,18 +102,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Removed
 
--   `ZipManager` class (`src/Services/Zip/ZipManager.php`) — logic absorbed by service provider bindings
+-   `ZipManager` class (`src/Services/Zip/ZipManager.php`) - logic absorbed by service provider bindings
 
 ## [2.5.0] - 2026-03-17
 
 ### Added
--   Laravel 13 support — all `illuminate/*` constraints now accept `^12.55.0 || ^13.0`
+-   Laravel 13 support - all `illuminate/*` constraints now accept `^12.55.0 || ^13.0`
 -   `orchestra/testbench` constraint updated to `^11.0.0 || ^12.0` for Laravel 13 test compatibility
 
 ## [2.4.2] - 2026-03-06
 
 ### Fixed
--   Fixed `notifier:install` writing deprecated env variable names (`BACKUP_CODE`, `BACKUP_URL`, `BACKUP_ZIP_PASSWORD`) — now correctly writes `NOTIFIER_BACKUP_CODE`, `NOTIFIER_URL`, `NOTIFIER_BACKUP_PASSWORD`
+-   Fixed `notifier:install` writing deprecated env variable names (`BACKUP_CODE`, `BACKUP_URL`, `BACKUP_ZIP_PASSWORD`) - now correctly writes `NOTIFIER_BACKUP_CODE`, `NOTIFIER_URL`, `NOTIFIER_BACKUP_PASSWORD`
 
 ## [2.4.1] - 2026-03-06
 
@@ -95,9 +124,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 -   `DisplayHelper` trait with gradient ASCII logo, themed badges, and reusable display utilities for all Artisan commands
--   `Theme` enum with 5 color themes (Blue, Cyan, Green, Purple, Orange) — randomly selected per command invocation
+-   `Theme` enum with 5 color themes (Blue, Cyan, Green, Purple, Orange) - randomly selected per command invocation
 -   Rector (`rector/rector`) for automated code quality improvements with PHP 8.4 rule sets
--   `laravel/prompts` for interactive install wizard — text inputs with validation and masked password entry
+-   `laravel/prompts` for interactive install wizard - text inputs with validation and masked password entry
 -   Composite composer scripts: `lint`, `lint:check`, `check` for streamlined CI/dev workflows
 -   Explicitly declared all required illuminate components (`console`, `contracts`, `http`, `queue`, `routing`) and `guzzlehttp/guzzle`
 
@@ -117,19 +146,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [2.3.3] - 2026-03-04
 
 ### Fixed
--   Queue connection config now uses dedicated `NOTIFIER_QUEUE_CONNECTION` env var instead of reading Laravel's `QUEUE_CONNECTION` — prevents unintended async dispatch on apps that have a queue driver configured but didn't opt into queued backups
+-   Queue connection config now uses dedicated `NOTIFIER_QUEUE_CONNECTION` env var instead of reading Laravel's `QUEUE_CONNECTION` - prevents unintended async dispatch on apps that have a queue driver configured but didn't opt into queued backups
 
 ## [2.3.2] - 2026-03-04
 
 ### Added
--   Queue support for backup jobs — backups can now be dispatched to a queue worker instead of running synchronously in the HTTP request
+-   Queue support for backup jobs - backups can now be dispatched to a queue worker instead of running synchronously in the HTTP request
 -   New `ProcessBackupJob` queued job with 15-minute timeout and single-attempt safety
 -   New `queue_connection` config option (`QUEUE_CONNECTION` env var, default `sync`)
 -   Queue configuration check in `notifier:check` command
 
 ### Changed
 -   Renamed environment variable references in validation output: `BACKUP_ZIP_PASSWORD` → `NOTIFIER_BACKUP_PASSWORD`, `BACKUP_CODE` → `NOTIFIER_BACKUP_CODE`, `BACKUP_URL` → `NOTIFIER_URL`
--   `ChunkedUploadService` now streams chunks via temp files instead of loading into memory — avoids memory exhaustion on large backups
+-   `ChunkedUploadService` now streams chunks via temp files instead of loading into memory - avoids memory exhaustion on large backups
 -   `NotifierDatabaseService` and `NotifierStorageService` now re-throw exceptions instead of silently logging, enabling proper error propagation in queued jobs
 -   Backup filenames now include time (`Y-m-d_H-i-s`) to avoid collisions on multiple daily backups
 
@@ -141,7 +170,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [2.3.0] - 2026-03-03
 ### Added
 -   Chunked upload protocol to avoid Cloudflare 413 Payload Too Large errors
--   New `ChunkedUploadService` — splits backup files into 20 MB chunks and sends via 3-phase protocol (init → chunks → finalize)
+-   New `ChunkedUploadService` - splits backup files into 20 MB chunks and sends via 3-phase protocol (init → chunks → finalize)
 -   Per-chunk retry logic (3 attempts, 2s delay) for resilient uploads
 -   SHA-256 checksum verification for both individual chunks and the complete file
 -   New `chunk_size` config option (`NOTIFIER_CHUNK_SIZE` env var, default 20 MB)
@@ -161,9 +190,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
--   Fixed all unit test failures caused by Mockery being used on `final` classes — replaced with `Config::set()` approach
--   Fixed `NotifierControllerTest` referencing non-existent `NotifierController` class — rewritten to test `NotifierSendBackupController` via HTTP
--   Fixed CI test hang caused by real outbound HTTP request to `httpbin.org` in `NotifierCheckCommandTest` — added `Http::fake()`
+-   Fixed all unit test failures caused by Mockery being used on `final` classes - replaced with `Config::set()` approach
+-   Fixed `NotifierControllerTest` referencing non-existent `NotifierController` class - rewritten to test `NotifierSendBackupController` via HTTP
+-   Fixed CI test hang caused by real outbound HTTP request to `httpbin.org` in `NotifierCheckCommandTest` - added `Http::fake()`
 -   Fixed `CACHE_DRIVER=array` → `CACHE_STORE=array` in `phpunit.xml` (Laravel 12 renamed the env var, causing throttle middleware to crash with missing `cache` table)
 -   Fixed stale route/method/parameter assertions across feature tests after API redesign (`GET /api/backup` → `POST /api/notifier/backup`)
 -   Fixed Pint style issues: `fully_qualified_strict_types` and `single_blank_line_at_eof`
@@ -208,25 +237,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Removed
 
--   `guzzlehttp/guzzle` from `require` — package now relies on Laravel's `Http` facade; Guzzle is available transitively through `laravel/framework`
+-   `guzzlehttp/guzzle` from `require` - package now relies on Laravel's `Http` facade; Guzzle is available transitively through `laravel/framework`
 
 ## [2.1.0] - 2026-02-18
 
 ### ⚠️ BREAKING CHANGES
 
--   **Services**: `NotifierDatabaseService` and `NotifierStorageService` are no longer static — use dependency injection or `app()` to resolve
+-   **Services**: `NotifierDatabaseService` and `NotifierStorageService` are no longer static - use dependency injection or `app()` to resolve
 
 ### Added
 
 -   `ZipCreator` interface contract for pluggable ZIP archive strategies
--   `CliZipCreator` — creates ZIP archives using CLI 7z with AES-256 encryption (low memory, fast)
--   `PhpZipCreator` — creates ZIP archives using PHP ZipArchive extension (fallback)
--   `ZipManager` — auto-resolves the best available ZIP strategy
--   `ChecksNotifierEnvironment` trait — shared environment validation for backup commands
+-   `CliZipCreator` - creates ZIP archives using CLI 7z with AES-256 encryption (low memory, fast)
+-   `PhpZipCreator` - creates ZIP archives using PHP ZipArchive extension (fallback)
+-   `ZipManager` - auto-resolves the best available ZIP strategy
+-   `ChecksNotifierEnvironment` trait - shared environment validation for backup commands
 -   `zip_strategy` config option (`auto`, `cli`, `php`) with `NOTIFIER_ZIP_STRATEGY` env var
 -   `routes_enabled` and `route_prefix` config options for route customization
 -   `--single-transaction` and `--quick` flags to mysqldump for non-locking, memory-efficient dumps
--   Exit code validation for mysqldump process — throws `RuntimeException` on failure
+-   Exit code validation for mysqldump process - throws `RuntimeException` on failure
 -   `finally` block in both services for guaranteed backup file cleanup
 -   Services registered as singletons in the service container
 
@@ -446,7 +475,8 @@ NOTIFIER_LOGGING_CHANNEL=backup
 -   GitHub Actions CI/CD
 -   Documentation and examples
 
-[Unreleased]: https://github.com/devuni-cz/notifier-package/compare/v2.6.3...HEAD
+[Unreleased]: https://github.com/devuni-cz/notifier-package/compare/v2.7.0...HEAD
+[2.7.0]: https://github.com/devuni-cz/notifier-package/compare/v2.6.4...v2.7.0
 [2.6.3]: https://github.com/devuni-cz/notifier-package/compare/v2.6.2...v2.6.3
 [2.6.2]: https://github.com/devuni-cz/notifier-package/compare/v2.6.1...v2.6.2
 [2.6.1]: https://github.com/devuni-cz/notifier-package/compare/v2.6.0...v2.6.1

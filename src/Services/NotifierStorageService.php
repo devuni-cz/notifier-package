@@ -5,9 +5,8 @@ declare(strict_types=1);
 namespace Devuni\Notifier\Services;
 
 use Carbon\Carbon;
-use Devuni\Notifier\Contracts\ZipCreator;
 use Devuni\Notifier\Enums\BackupTypeEnum;
-use Devuni\Notifier\Support\NotifierLogger;
+use Devuni\Notifier\Interfaces\ZipCreatorInterface;
 use Illuminate\Support\Facades\File;
 use RuntimeException;
 use Throwable;
@@ -16,8 +15,8 @@ final class NotifierStorageService
 {
     public function __construct(
         private readonly ChunkedUploadService $uploadService,
-        private readonly ZipCreator $zipCreator,
-        private readonly NotifierLogger $notifierLogger,
+        private readonly ZipCreatorInterface $zipCreator,
+        private readonly NotifierLoggerService $notifierLogger,
     ) {}
 
     public function createStorageBackup(): string

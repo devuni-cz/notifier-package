@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace Devuni\Notifier\Support;
+namespace Devuni\Notifier\Services;
 
 use Illuminate\Support\Facades\Log;
 use Psr\Log\LoggerInterface;
 
-final class NotifierLogger
+final class NotifierLoggerService
 {
     private readonly LoggerInterface $logger;
 

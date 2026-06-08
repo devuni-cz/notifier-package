@@ -38,11 +38,60 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Database Connection
+    |--------------------------------------------------------------------------
+    |
+    | Which Laravel database connection to back up. When null (default), the
+    | package uses your app's default connection from config('database.default').
+    |
+    | Supported drivers: mysql, mariadb, pgsql (including YugabyteDB via YSQL).
+    |
+    */
+    'database_connection' => env('NOTIFIER_DATABASE_CONNECTION'),
+
+    /*
+    |--------------------------------------------------------------------------
+    | PostgreSQL Dump Binary
+    |--------------------------------------------------------------------------
+    |
+    | Which CLI binary to use for PostgreSQL/YugabyteDB dumps.
+    |
+    | Options:
+    | - null (default) : Auto-detect - prefers `ysql_dump` (YugabyteDB), falls
+    |                    back to `pg_dump` (standard PostgreSQL).
+    | - 'pg_dump'      : Force standard PostgreSQL client.
+    | - 'ysql_dump'    : Force YugabyteDB's ysql_dump (a pg_dump fork with
+    |                    Yugabyte-specific optimizations).
+    |
+    | Only applies when the active connection driver is `pgsql`.
+    |
+    */
+    'postgres_dump_binary' => env('NOTIFIER_POSTGRES_DUMP_BINARY'),
+
+    /*
+    |--------------------------------------------------------------------------
+    | PostgreSQL Schema
+    |--------------------------------------------------------------------------
+    |
+    | Default schema for unqualified table names in `excluded_tables` when
+    | using a PostgreSQL/YugabyteDB connection. If a table name in the list
+    | already contains a dot (e.g. "audit.events"), it is passed through
+    | as-is.
+    |
+    */
+    'postgres_schema' => env('NOTIFIER_POSTGRES_SCHEMA', 'public'),
+
+    /*
+    |--------------------------------------------------------------------------
     | Excluded Database Tables
     |--------------------------------------------------------------------------
     |
     | Database tables that should be excluded from the database backup.
     | Useful for excluding large log tables or temporary data.
+    |
+    | Write plain table names - the package prefixes them automatically
+    | (database name for MySQL/MariaDB, `postgres_schema` for PostgreSQL).
+    | Fully qualified names containing a dot are passed through as-is.
     |
     | Examples:
     | - 'telescope_entries'      -> Laravel Telescope data
@@ -50,6 +99,7 @@ return [
     | - 'pulse_entries'          -> Laravel Pulse data
     | - 'sessions'               -> User sessions
     | - 'cache'                  -> Cache table
+    | - 'audit.events'           -> Fully qualified - uses literal "audit" schema/db
     |
     */
     'excluded_tables' => [],
@@ -110,7 +160,7 @@ return [
     | - 'cli'            : Force CLI 7z (requires p7zip-full package)
     | - 'php'            : Force PHP ZipArchive extension
     |
-    | CLI 7z is recommended for production — it uses less memory,
+    | CLI 7z is recommended for production - it uses less memory,
     | handles large files better, and runs in a separate process.
     |
     */
@@ -136,18 +186,18 @@ return [
     |
     | The queue connection used for backup jobs dispatched via the HTTP API.
     | When set to anything other than 'sync', backups are offloaded to a
-    | queue worker — avoiding PHP max_execution_time limits.
+    | queue worker - avoiding PHP max_execution_time limits.
     |
     | Supported: 'sync', 'database', 'redis', 'sqs', 'beanstalkd'
     |            (any connection defined in config/queue.php)
     |
-    | 'sync'       — runs backup synchronously in the HTTP request (default)
-    | 'database'   — dispatches to the jobs table (requires queue:table migration)
-    | 'redis'      — dispatches to Redis (requires phpredis or predis)
-    | 'sqs'        — dispatches to Amazon SQS
-    | 'beanstalkd' — dispatches to Beanstalkd
+    | 'sync'       - runs backup synchronously in the HTTP request (default)
+    | 'database'   - dispatches to the jobs table (requires queue:table migration)
+    | 'redis'      - dispatches to Redis (requires phpredis or predis)
+    | 'sqs'        - dispatches to Amazon SQS
+    | 'beanstalkd' - dispatches to Beanstalkd
     |
-    | Artisan commands are not affected — they always run synchronously.
+    | Artisan commands are not affected - they always run synchronously.
     |
     */
     'queue_connection' => env('NOTIFIER_QUEUE_CONNECTION', 'sync'),

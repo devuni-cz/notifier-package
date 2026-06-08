@@ -97,8 +97,8 @@ describe('NotifierCheckCommand', function () {
         });
     });
 
-    describe('mysqldump availability check', function () {
-        it('checks for mysqldump command', function () {
+    describe('database dump tool check', function () {
+        it('checks for the configured database dump tool', function () {
             config([
                 'notifier.backup_code' => 'test-code',
                 'notifier.backup_url' => 'https://test-backup.com/upload',
@@ -106,7 +106,7 @@ describe('NotifierCheckCommand', function () {
             ]);
 
             $this->artisan('notifier:check')
-                ->expectsOutputToContain('Checking mysqldump availability');
+                ->expectsOutputToContain('Checking database dump tool');
         });
     });
 

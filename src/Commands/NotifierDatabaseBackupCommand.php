@@ -4,16 +4,16 @@ declare(strict_types=1);
 
 namespace Devuni\Notifier\Commands;
 
-use Devuni\Notifier\Concerns\ChecksNotifierEnvironment;
-use Devuni\Notifier\Concerns\DisplayHelper;
 use Devuni\Notifier\Services\NotifierConfigService;
 use Devuni\Notifier\Services\NotifierDatabaseService;
+use Devuni\Notifier\Traits\ChecksNotifierEnvironmentTrait;
+use Devuni\Notifier\Traits\DisplayHelperTrait;
 use Illuminate\Console\Command;
 
 final class NotifierDatabaseBackupCommand extends Command
 {
-    use ChecksNotifierEnvironment;
-    use DisplayHelper;
+    use ChecksNotifierEnvironmentTrait;
+    use DisplayHelperTrait;
 
     protected $signature = 'notifier:database-backup';
 

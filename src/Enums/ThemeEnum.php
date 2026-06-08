@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Devuni\Notifier\Enums;
 
-enum Theme: string
+enum ThemeEnum: string
 {
     case Blue = 'blue';
     case Cyan = 'cyan';

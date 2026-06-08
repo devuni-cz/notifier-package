@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Devuni\Notifier\Commands;
 
-use Devuni\Notifier\Concerns\DisplayHelper;
+use Devuni\Notifier\Traits\DisplayHelperTrait;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\File;
 
@@ -17,7 +17,7 @@ use function Laravel\Prompts\warning;
 
 final class NotifierInstallCommand extends Command
 {
-    use DisplayHelper;
+    use DisplayHelperTrait;
 
     protected $signature = 'notifier:install {--force : Overwrites existing environment variables}';
 

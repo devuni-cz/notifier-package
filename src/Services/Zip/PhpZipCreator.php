@@ -4,18 +4,18 @@ declare(strict_types=1);
 
 namespace Devuni\Notifier\Services\Zip;
 
-use Devuni\Notifier\Contracts\ZipCreator;
-use Devuni\Notifier\Support\NotifierLogger;
+use Devuni\Notifier\Interfaces\ZipCreatorInterface;
+use Devuni\Notifier\Services\NotifierLoggerService;
 use Illuminate\Support\Facades\File;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
 use RuntimeException;
 use ZipArchive;
 
-final class PhpZipCreator implements ZipCreator
+final class PhpZipCreator implements ZipCreatorInterface
 {
     public function __construct(
-        private readonly NotifierLogger $notifierLogger,
+        private readonly NotifierLoggerService $notifierLogger,
     ) {}
 
     public static function isAvailable(): bool
